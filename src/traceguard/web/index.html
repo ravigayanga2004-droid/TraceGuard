@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TraceGuard · Local security audit</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui;background:#0c1420;color:#e5edf7}
+body{max-width:1200px;margin:0 auto;padding:32px}header{display:flex;justify-content:space-between;gap:24px;align-items:center}
+h1{letter-spacing:-1px;margin-bottom:4px}h2{font-size:20px;margin-top:32px}p{color:#a9bacf}
+.badge{color:#6fe3b5;border:1px solid #356955;padding:8px 12px;border-radius:24px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:28px 0}
+.card{background:#142234;border:1px solid #293c53;padding:20px;border-radius:12px}.number{display:block;font-size:32px;color:#6fe3b5;margin:8px 0}
+button,select,a{font:inherit;color:#94c7ff}button,select{background:#142234;border:1px solid #45607b;border-radius:6px;padding:8px;cursor:pointer}
+nav{display:flex;gap:20px;flex-wrap:wrap}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:12px;text-align:left;border-bottom:1px solid #293c53;vertical-align:top}td{overflow-wrap:anywhere;max-width:350px}th{color:#a9bacf}
+.critical,.high{color:#ff9d9d}.medium{color:#ffcf80}.low{color:#8fe1c3}#error{color:#ff9d9d}details{margin:5px 0}footer{margin-top:32px;color:#a9bacf;font-size:14px}
+</style>
+<header><div><h1>TraceGuard</h1><p>Local file integrity &amp; security audit</p></div><span class="badge" id="integrity">Checking integrity…</span></header>
+<p id="error" role="alert"></p>
+<div class="cards" id="cards"></div>
+<nav><button id="refresh">Refresh</button><select id="severity" aria-label="Filter severity"><option value="">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option></select><a href="/api/report/json" download="traceguard.json">JSON report</a><a href="/api/report/markdown" download="traceguard.md">Markdown report</a><a href="/api/report/html" download="traceguard.html">HTML report</a><a href="/docs">API docs</a></nav>
+<h2>Recent changes</h2><p>Latest 100 recorded events. Run <code>traceguard watch</code> or <code>traceguard scan</code> to observe files.</p>
+<div class="scroll"><table><thead><tr><th>UTC time</th><th>Change</th><th>Path</th><th>Severity</th><th>Reason</th></tr></thead><tbody id="events"></tbody></table></div>
+<h2>Incidents</h2><div class="scroll"><table><thead><tr><th>ID</th><th>Last seen (UTC)</th><th>Changes</th><th>Score</th><th>Status</th></tr></thead><tbody id="incidents"></tbody></table></div>
+<h2>Differences from approved baseline</h2><ul id="drift"></ul>
+<footer>Files stay on this device. Approval is available through the CLI. Dashboard refreshes every five seconds. Directory timestamps and empty directories are not tracked.</footer>
+<script>
+let allEvents=[];
+const el=id=>document.getElementById(id);
+function cell(row,value,className=''){const td=document.createElement('td');td.textContent=value;td.className=className;row.append(td);}
+function drawEvents(){el('events').replaceChildren();for(const e of allEvents.filter(e=>!el('severity').value||e.severity===el('severity').value)){const tr=document.createElement('tr');cell(tr,e.timestamp);cell(tr,e.kind);cell(tr,e.old_path?`${e.old_path} → ${e.path}`:e.path);cell(tr,`${e.severity} (${e.score})`,e.severity);cell(tr,e.reasons.join('; '));el('events').append(tr);}}
+async function get(path){const r=await fetch(path);if(!r.ok){const d=await r.json();throw new Error(d.detail||`Request failed: ${r.status}`);}return r.json();}
+async function refresh(){try{const [s,events,incidents,drift]=await Promise.all(['/api/status','/api/events','/api/incidents','/api/drift'].map(get));el('error').textContent='';el('integrity').textContent='Integrity verified';el('cards').replaceChildren();for(const [label,value] of [['Baseline files',s.baseline_files],['Observed files',s.observed_files],['Baseline differences',s.drift_count],['Recorded changes',s.event_count],['Incidents',s.incident_count]]){const card=document.createElement('div');card.className='card';card.textContent=label;const n=document.createElement('span');n.className='number';n.textContent=value;card.append(n);el('cards').append(card);}allEvents=events;drawEvents();el('incidents').replaceChildren();for(const i of incidents){const tr=document.createElement('tr');for(const k of ['id','last_seen','event_count','score','status'])cell(tr,i[k]);el('incidents').append(tr);}el('drift').replaceChildren();for(const d of drift){const li=document.createElement('li');li.textContent=`${d.kind}: ${d.old_path?d.old_path+' → ':''}${d.path}`;el('drift').append(li);}if(!drift.length){const li=document.createElement('li');li.textContent='Observed files match the approved baseline.';el('drift').append(li);}}catch(e){el('error').textContent=e.message;el('integrity').textContent='Unable to verify';}}
+el('refresh').onclick=refresh;el('severity').onchange=drawEvents;refresh();setInterval(refresh,5000);
+</script>
+</html>
