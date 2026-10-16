@@ -63,6 +63,13 @@ changes with scoring explanations, grouped incidents, and report downloads. All 
 and API documentation are local; no CDN is used. `serve` does not start monitoring;
 run `watch` in another terminal or run `scan` manually. Use Ctrl+C to stop the server.
 
+Use the sidebar to jump to file activity, incidents, baseline differences, or report
+downloads. Search recent activity by file path or scoring reason, combine severity
+and change-type filters, and use **Clear filters** to reset the view. Times appear in
+your browser's local timezone. Auto-refresh can be paused while reviewing changes;
+**Refresh** reloads recorded data without starting a file scan. If a refresh fails,
+the dashboard labels previously loaded data and offers a retry.
+
 ## Commands
 
 ```text
