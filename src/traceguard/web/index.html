@@ -1,35 +1,273 @@
 <!doctype html>
 <html lang="en">
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TraceGuard · Local security audit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>TraceGuard · Security overview</title>
 <style>
-:root{color-scheme:dark;font:16px system-ui;background:#0c1420;color:#e5edf7}
-body{max-width:1200px;margin:0 auto;padding:32px}header{display:flex;justify-content:space-between;gap:24px;align-items:center}
-h1{letter-spacing:-1px;margin-bottom:4px}h2{font-size:20px;margin-top:32px}p{color:#a9bacf}
-.badge{color:#6fe3b5;border:1px solid #356955;padding:8px 12px;border-radius:24px}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:28px 0}
-.card{background:#142234;border:1px solid #293c53;padding:20px;border-radius:12px}.number{display:block;font-size:32px;color:#6fe3b5;margin:8px 0}
-button,select,a{font:inherit;color:#94c7ff}button,select{background:#142234;border:1px solid #45607b;border-radius:6px;padding:8px;cursor:pointer}
-nav{display:flex;gap:20px;flex-wrap:wrap}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:12px;text-align:left;border-bottom:1px solid #293c53;vertical-align:top}td{overflow-wrap:anywhere;max-width:350px}th{color:#a9bacf}
-.critical,.high{color:#ff9d9d}.medium{color:#ffcf80}.low{color:#8fe1c3}#error{color:#ff9d9d}details{margin:5px 0}footer{margin-top:32px;color:#a9bacf;font-size:14px}
+:root{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#262d42;background:#f5f6fa;font-synthesis:none;--muted:#646e83;--line:#e5e8f0;--accent:#5b4de0;--green:#167457;--red:#b7324b;--amber:#916009}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:25px}body{margin:0}button,input,select{font:inherit}a{color:inherit}button,a,select,summary{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:wait;opacity:.6}:focus-visible{outline:3px solid #8c80ff;outline-offset:4px}[hidden]{display:none!important}svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.icon-defs{position:absolute;width:0;height:0;overflow:hidden}.skip{position:fixed;top:-80px;left:20px;z-index:10;background:white;padding:14px}.skip:focus{top:12px}
+.sidebar{position:fixed;inset:0 auto 0 0;width:228px;background:#fff;border-right:1px solid var(--line);padding:34px 20px;display:flex;flex-direction:column;z-index:3}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font-size:23px;font-weight:750;letter-spacing:-.9px;padding:0 9px}.brand-mark{display:grid;place-items:center;width:37px;height:41px;background:var(--accent);color:white;border-radius:12px}.brand-mark svg{width:25px;height:25px}.workspace{font-size:11px;font-weight:700;letter-spacing:1.4px;color:#7b8194;margin:45px 14px 14px}.side-nav{display:grid;gap:7px}.side-nav a{display:flex;gap:12px;align-items:center;padding:13px 14px;color:var(--muted);border-radius:9px;text-decoration:none;font-size:14px;font-weight:600}.side-nav a:hover{background:#f6f5ff;color:var(--accent)}.side-nav a.active{color:var(--accent);background:#efedff}.nav-count{margin-left:auto;font-size:11px;background:#e0dcff;padding:2px 7px;border-radius:5px}.sidebar-bottom{margin-top:auto}.local-card{padding:17px 13px;border:1px solid var(--line);border-radius:12px;background:#fafbfe}.local-card strong{display:flex;align-items:center;gap:8px;font-size:12px}.local-card p{font-size:12px;line-height:1.6;color:var(--muted);margin:8px 0 0}.docs-link{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;text-decoration:none;padding:20px 12px 0}.dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;flex-shrink:0}.local-card .dot{color:var(--green)}
+main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:flex;justify-content:space-between;align-items:center;padding-bottom:25px;border-bottom:1px solid var(--line);gap:12px}.breadcrumb{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:12px}.breadcrumb strong{font-weight:600;color:#343b50}.top-status{display:flex;align-items:center;gap:16px;font-size:11px;color:var(--muted)}.device-tag{display:flex;align-items:center;gap:7px;color:var(--green);background:#eaf5f0;border:1px solid #d6eae0;border-radius:6px;padding:6px 9px}.device-tag svg{width:13px;height:13px}.page-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:30px 0 24px}h1{font-size:30px;font-weight:720;letter-spacing:-1px;margin:0 0 8px}.subtitle{font-size:14px;color:var(--muted);margin:0;line-height:1.6}.actions{display:flex;align-items:center;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dce0eb;border-radius:8px;background:white;color:#424960;padding:10px 14px;text-decoration:none;font-size:12px;font-weight:600;min-height:40px;white-space:nowrap}.btn:hover{background:#f0f1f8}.btn.primary{background:var(--accent);border-color:var(--accent);color:white;box-shadow:0 3px 6px #5b4de01c}.btn.primary:hover{background:#4c3fc7}.btn svg{width:16px;height:16px}.error{display:flex;align-items:center;justify-content:space-between;gap:16px;color:#9b253b;background:#fff0f2;border:1px solid #f1c6cf;border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px}.error p{margin:4px 0;line-height:1.5}
+.health{display:flex;align-items:center;gap:17px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:21px 24px;margin-bottom:22px}.health-icon{display:grid;place-items:center;color:var(--accent);background:#f0edff;width:45px;height:45px;border-radius:50%;flex-shrink:0}.health.good .health-icon{color:var(--green);background:#e9f6ef}.health.warning .health-icon{color:var(--amber);background:#fff4db}.health.failed .health-icon{color:var(--red);background:#ffedf0}.health h2{font-size:15px;margin:0 0 6px}.health p{font-size:12px;line-height:1.6;color:var(--muted);margin:0}.integrity{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;white-space:nowrap;color:var(--muted);padding:8px 11px;background:#f4f5f8;border-radius:6px}.good .integrity,.warning .integrity{color:var(--green);background:#edf7f2}.failed .integrity{color:var(--red);background:#ffedf0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:27px}.stat{background:white;border:1px solid var(--line);border-radius:11px;padding:20px;text-decoration:none;transition:transform .15s,box-shadow .15s}.stat:hover{transform:translateY(-2px);box-shadow:0 6px 20px #2625480a}.stat-top{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--muted);gap:8px}.stat-icon{display:grid;place-items:center;background:#f0edff;color:var(--accent);width:33px;height:33px;border-radius:8px}.stat-icon.amber{background:#fff5e3;color:var(--amber)}.stat-icon.blue{background:#edf3ff;color:#4576c4}.stat-icon.rose{background:#fff0f2;color:#ba5771}.stat-number{font-size:32px;line-height:1.3;font-weight:700;letter-spacing:-1px;display:block;margin:10px 0 6px;font-variant-numeric:tabular-nums}.stat-note{font-size:11px;color:var(--muted);line-height:1.6}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:23px;scroll-margin-top:24px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 23px 18px}.title-line{display:flex;align-items:center;gap:9px}h2{font-size:16px;font-weight:650;margin:0;letter-spacing:-.25px}.count{font-size:11px;font-weight:600;padding:3px 7px;border-radius:5px;background:#f0f1f7;color:#626b80;white-space:nowrap}.panel-head p{color:var(--muted);font-size:12px;line-height:1.6;margin:6px 0 0}.auto{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap}.auto input{accent-color:var(--accent);width:15px;height:15px}.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:0 23px 18px}.search{position:relative;flex:1;min-width:180px}.search svg{position:absolute;left:12px;top:11px;width:17px;height:17px;color:#7b8194}.search input{width:100%;min-height:40px;border:1px solid var(--line);border-radius:7px;padding:9px 12px 9px 37px;background:#fbfcfe;color:#30364c;font-size:12px}.search input::placeholder{color:#747d90}.filters select{min-height:40px;max-width:100%;border:1px solid var(--line);background:#fff;border-radius:7px;color:#515a70;padding:8px 27px 8px 12px;font-size:12px;cursor:pointer}.clear{border:0;background:none;color:var(--accent);font-size:12px;padding:10px}.table-scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;text-align:left;font-size:12px}caption{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}th{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:#717b8e;background:#fafbfe;font-weight:600;padding:13px 23px;border-block:1px solid var(--line);white-space:nowrap}td{padding:16px 23px;border-bottom:1px solid #eff0f5;vertical-align:top;line-height:1.6}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#fcfcff}.file-path{font-family:Consolas,"SFMono-Regular",monospace;overflow-wrap:anywhere;min-width:150px;max-width:320px;color:#383e55;font-size:12px}.old-path{display:block;color:var(--muted);font-size:11px}.time{display:block;white-space:nowrap;color:#555f75}.date{display:block;color:#737c8e;font-size:10px}.badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:650;line-height:1.5;padding:4px 8px;border-radius:5px;white-space:nowrap;background:#f0f1f6;color:#576078;text-transform:capitalize}.badge.low{background:#eaf7f0;color:#16704e}.badge.medium{background:#fff4df;color:#895904}.badge.high{background:#fff0e9;color:#a44a21}.badge.critical{background:#ffedf1;color:#b22c49}.kind{display:inline-flex;align-items:center;gap:7px;text-transform:capitalize;color:#566079;white-space:nowrap}.kind-mark{font-size:15px;font-weight:600;color:var(--accent);width:17px;text-align:center}.reason{min-width:170px;max-width:300px;color:var(--muted)}details summary{color:var(--accent);cursor:pointer;font-size:11px;margin-top:5px}details ul{padding-left:16px;font-size:11px}.score{font-size:10px;display:block;color:#737c8e;margin-top:4px}.table-foot{padding:13px 23px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:11px;line-height:1.5}.table-foot a{color:var(--accent);text-decoration:none}.empty{text-align:center;padding:33px 20px!important;color:var(--muted)}.empty strong{display:block;color:#454e64;font-size:13px;margin-bottom:5px}.empty svg{display:block;color:#9d96cf;width:29px;height:29px;margin:0 auto 12px}.empty p{font-size:12px;margin:0;line-height:1.7}.lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.lower-grid .panel{min-width:0}.compact th,.compact td{padding-left:20px;padding-right:20px}.baseline-summary{margin:0 22px 18px;padding:13px 14px;background:#f7f8fc;border-radius:7px;font-size:12px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}.drift-list{list-style:none;padding:0;margin:0;max-height:280px;overflow:auto}.drift-list li{padding:13px 22px;border-top:1px solid #eff0f5;display:flex;align-items:flex-start;justify-content:space-between;gap:15px}.drift-list li.empty{display:block}.drift-list .file-path{min-width:0}.guide{border-top:1px solid var(--line);padding:15px 22px;font-size:12px;color:var(--muted);line-height:1.7}.guide summary{font-size:12px;font-weight:600;margin:0;color:#586078}.guide p{margin-bottom:8px}code{font-family:Consolas,monospace;background:#efedf9;border-radius:4px;padding:3px 6px;font-size:11px;color:#584bb5;overflow-wrap:anywhere}.guide code{display:block;margin:10px 0;padding:9px 11px}.reports{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:22px 24px}.reports-title{display:flex;align-items:center;gap:14px}.reports-title>svg{width:28px;height:28px;padding:10px;box-sizing:content-box;background:#f1effc;color:var(--accent);border-radius:10px}.reports p{font-size:12px;color:var(--muted);margin:7px 0 0;line-height:1.6}.report-links{display:flex;gap:8px}footer{display:flex;justify-content:space-between;gap:14px;font-size:11px;line-height:1.7;color:#737c8f;padding:0 2px 8px}footer span{display:flex;align-items:center;gap:6px}footer svg{width:13px;height:13px}
+@media(max-width:1200px){.sidebar{width:195px;padding-inline:13px}main{margin-left:195px;padding:25px}.stats{gap:12px}.stat{padding:16px}.stat-top{font-size:11px}.stat-icon{width:28px;height:28px}.lower-grid{grid-template-columns:1fr}.reports{flex-wrap:wrap}td,th{padding-inline:17px}}
+@media(max-width:900px){.sidebar{width:78px;align-items:center;padding:25px 12px}.brand{padding:0}.brand-name,.workspace,.nav-label,.nav-count,.sidebar-bottom{display:none}.side-nav{margin-top:35px;width:100%}.side-nav a{justify-content:center;padding:14px}main{margin-left:78px;padding:22px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-top{font-size:12px}.health{flex-wrap:wrap}.integrity{margin-left:62px}.top-status #updated{display:none}.page-heading{align-items:flex-start}h1{font-size:27px}.actions .btn{padding:10px}.actions .btn svg{display:none}}
+@media(max-width:600px){html{scroll-padding-top:85px}.sidebar{position:sticky;top:0;width:100%;height:64px;flex-direction:row;justify-content:space-between;padding:10px 16px;border-right:0;border-bottom:1px solid var(--line)}.brand-mark{width:31px;height:35px;border-radius:9px}.brand-name{display:inline;font-size:18px}.brand{gap:7px}.side-nav{display:flex;margin:0;gap:2px;width:auto}.side-nav a{padding:10px}.side-nav svg{width:19px;height:19px}.side-nav a:last-child{display:none}main{margin-left:0;padding:18px 16px}.topbar{padding-bottom:18px}.breadcrumb{font-size:11px;gap:8px}.device-tag{font-size:10px}.page-heading{flex-direction:column;gap:16px;margin:24px 0 20px}h1{font-size:27px}.subtitle{font-size:12px}.actions{width:100%}.actions .btn{flex:1}.actions .btn svg{display:block}.health{padding:17px;gap:12px}.health-icon{width:36px;height:36px}.health-copy{flex:1;min-width:0}.health h2{font-size:13px}.health p{font-size:12px}.integrity{margin-left:48px;font-size:10px}.stats{gap:10px;margin-bottom:20px}.stat{padding:14px}.stat-top{font-size:11px}.stat-icon{width:26px;height:26px}.stat-icon svg{width:16px;height:16px}.stat-number{font-size:28px}.stat-note{font-size:10px}.panel-head{padding:18px 16px;align-items:flex-start;gap:10px}h2{font-size:14px}.panel-head p{font-size:11px}.auto{font-size:10px;padding-top:2px}.filters{padding:0 16px 16px;gap:8px}.search{flex-basis:100%}.filters select{flex:1;min-width:0;font-size:11px;padding-left:8px}.table-foot{padding:12px 16px;font-size:10px}.lower-grid{gap:0}.reports{padding:18px 16px;gap:18px}.reports-title>svg{width:24px;height:24px}.report-links{width:100%}.report-links .btn{flex:1;font-size:11px;padding:10px 8px}footer{flex-direction:column;gap:5px}.error{flex-wrap:wrap;font-size:12px}.panel{scroll-margin-top:80px}}
+.lower-grid{align-items:start}
+@media(max-width:600px){
+  .health{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:start}
+  .health-icon{margin-top:2px}.integrity{grid-column:2;margin-left:0;justify-self:start}
+  #changes table,#events{display:block}#changes thead{display:none}
+  #events tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:17px 16px;border-top:1px solid var(--line)}
+  #events td{display:block;padding:0;border:0}
+  #events .file-path{grid-column:1/-1;min-width:0;max-width:none;font-weight:600;font-size:12px}
+  #events td:nth-child(3){display:flex;align-items:center;gap:7px;justify-content:flex-end}
+  #events .score{margin:0}#events td:nth-child(4){grid-column:1/-1;font-size:11px}
+  #events td:nth-child(4)::before{content:"Detected ";color:var(--muted)}
+  #events .time{display:inline-flex;gap:8px;flex-wrap:wrap}#events .date{font-size:11px}
+  #events .reason{grid-column:1/-1;min-width:0;max-width:none;font-size:12px}
+  #events .empty{grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
 </style>
-<header><div><h1>TraceGuard</h1><p>Local file integrity &amp; security audit</p></div><span class="badge" id="integrity">Checking integrity…</span></header>
-<p id="error" role="alert"></p>
-<div class="cards" id="cards"></div>
-<nav><button id="refresh">Refresh</button><select id="severity" aria-label="Filter severity"><option value="">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option></select><a href="/api/report/json" download="traceguard.json">JSON report</a><a href="/api/report/markdown" download="traceguard.md">Markdown report</a><a href="/api/report/html" download="traceguard.html">HTML report</a><a href="/docs">API docs</a></nav>
-<h2>Recent changes</h2><p>Latest 100 recorded events. Run <code>traceguard watch</code> or <code>traceguard scan</code> to observe files.</p>
-<div class="scroll"><table><thead><tr><th>UTC time</th><th>Change</th><th>Path</th><th>Severity</th><th>Reason</th></tr></thead><tbody id="events"></tbody></table></div>
-<h2>Incidents</h2><div class="scroll"><table><thead><tr><th>ID</th><th>Last seen (UTC)</th><th>Changes</th><th>Score</th><th>Status</th></tr></thead><tbody id="incidents"></tbody></table></div>
-<h2>Differences from approved baseline</h2><ul id="drift"></ul>
-<footer>Files stay on this device. Approval is available through the CLI. Dashboard refreshes every five seconds. Directory timestamps and empty directories are not tracked.</footer>
+</head>
+<body>
+<svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+<symbol id="grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+<symbol id="activity" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+<symbol id="alert" viewBox="0 0 24 24"><path d="m10.3 4-8 14a2 2 0 0 0 1.7 3h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></symbol>
+<symbol id="files" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 12h6m-6 4h6"/></symbol>
+<symbol id="download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
+<symbol id="refresh-icon" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></symbol>
+<symbol id="search-icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+<symbol id="code-icon" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 16"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+</defs></svg>
+<a class="skip" href="#main">Skip to dashboard</a>
+<aside class="sidebar" aria-label="Application sidebar">
+  <a class="brand" href="#overview" aria-label="TraceGuard overview"><span class="brand-mark"><svg aria-hidden="true"><use href="#shield"/></svg></span><span class="brand-name">TraceGuard</span></a>
+  <p class="workspace">WORKSPACE</p>
+  <nav class="side-nav" aria-label="Main navigation">
+    <a href="#overview" class="active" aria-current="location" aria-label="Overview"><svg aria-hidden="true"><use href="#grid"/></svg><span class="nav-label">Overview</span></a>
+    <a href="#changes" aria-label="Recent changes"><svg aria-hidden="true"><use href="#activity"/></svg><span class="nav-label">File activity</span></a>
+    <a href="#incident-section" aria-label="Incidents"><svg aria-hidden="true"><use href="#alert"/></svg><span class="nav-label">Incidents</span><span class="nav-count" id="nav-incidents">–</span></a>
+    <a href="#baseline" aria-label="Baseline differences"><svg aria-hidden="true"><use href="#shield"/></svg><span class="nav-label">Baseline</span></a>
+    <a href="#reports" aria-label="Download reports"><svg aria-hidden="true"><use href="#download"/></svg><span class="nav-label">Reports</span></a>
+  </nav>
+  <div class="sidebar-bottom"><div class="local-card"><strong><span class="dot"></span>Private by design</strong><p>Your files and audit history stay on this device.</p></div><a class="docs-link" href="/docs"><svg aria-hidden="true"><use href="#code-icon"/></svg>API documentation ↗</a></div>
+</aside>
+<main id="main">
+  <div id="overview">
+    <div class="topbar"><div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Security overview</strong></div><div class="top-status"><span id="updated">Waiting for first update</span><span class="device-tag"><svg aria-hidden="true"><use href="#lock"/></svg>Local workspace</span></div></div>
+    <div class="page-heading"><div><h1>Security overview</h1><p class="subtitle">A clear view of your files. Every change accounted for.</p></div><div class="actions"><button class="btn" id="refresh"><svg aria-hidden="true"><use href="#refresh-icon"/></svg><span id="refresh-label">Refresh</span></button><a class="btn primary" href="#reports"><svg aria-hidden="true"><use href="#download"/></svg>Export report</a></div></div>
+    <div class="error" id="error" role="alert" hidden><div><strong id="error-title">Unable to update the dashboard</strong><p id="error-message"></p><p id="stale-message"></p></div><button class="btn" id="retry">Try again</button></div>
+    <div class="health" id="health" role="status"><span class="health-icon"><svg aria-hidden="true"><use href="#shield"/></svg></span><div class="health-copy"><h2 id="health-title">Getting your workspace ready</h2><p id="health-description">Checking audit integrity and loading the latest file activity…</p></div><span class="integrity"><span class="dot"></span><span id="integrity-label">Checking integrity</span></span></div>
+    <div class="stats" aria-label="Workspace statistics">
+      <a class="stat" href="#baseline"><div class="stat-top">Observed files <span class="stat-icon"><svg aria-hidden="true"><use href="#files"/></svg></span></div><span class="stat-number" id="observed-count">–</span><span class="stat-note" id="baseline-count">Loading approved baseline…</span></a>
+      <a class="stat" href="#baseline"><div class="stat-top">Baseline differences <span class="stat-icon amber"><svg aria-hidden="true"><use href="#shield"/></svg></span></div><span class="stat-number" id="drift-count">–</span><span class="stat-note">Compared with approved files</span></a>
+      <a class="stat" href="#changes"><div class="stat-top">Recorded changes <span class="stat-icon blue"><svg aria-hidden="true"><use href="#activity"/></svg></span></div><span class="stat-number" id="event-count">–</span><span class="stat-note">Across your audit history</span></a>
+      <a class="stat" href="#incident-section"><div class="stat-top">Incidents <span class="stat-icon rose"><svg aria-hidden="true"><use href="#alert"/></svg></span></div><span class="stat-number" id="incident-count">–</span><span class="stat-note">Related changes grouped together</span></a>
+    </div>
+  </div>
+  <section class="panel" id="changes" aria-labelledby="changes-title">
+    <div class="panel-head"><div><div class="title-line"><h2 id="changes-title">Recent file activity</h2><span class="count" id="activity-count">Loading</span></div><p>Explore what changed and why it matters.</p></div><label class="auto"><input id="auto-refresh" type="checkbox" checked>Auto-refresh · 5s</label></div>
+    <div class="filters"><label class="search"><svg aria-hidden="true"><use href="#search-icon"/></svg><input id="search" type="search" aria-label="Search file paths or change reasons" placeholder="Search file paths or reasons…" autocomplete="off"></label><select id="severity" aria-label="Filter by severity"><option value="">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select><select id="kind" aria-label="Filter by change type"><option value="">All change types</option><option value="created">Created</option><option value="modified">Modified</option><option value="deleted">Deleted</option><option value="renamed">Renamed</option><option value="metadata">Metadata</option><option value="database_tampering">Database tampering</option></select><button class="clear" id="clear-filters" hidden>Clear filters</button></div>
+    <div class="table-scroll" role="region" aria-label="Recent file activity table" tabindex="0"><table><caption>Latest recorded file changes</caption><thead><tr><th scope="col">File path</th><th scope="col">Change</th><th scope="col">Severity</th><th scope="col">Detected</th><th scope="col">Why it matters</th></tr></thead><tbody id="events"><tr><td colspan="5" class="empty">Loading file activity…</td></tr></tbody></table></div>
+    <div class="table-foot"><span id="event-summary" role="status">Loading recent changes…</span><a href="#monitoring-help">How to record changes ↗</a></div>
+  </section>
+  <div class="lower-grid">
+    <section class="panel" id="incident-section" aria-labelledby="incidents-title"><div class="panel-head"><div><div class="title-line"><h2 id="incidents-title">Incidents</h2><span class="count" id="incidents-count">–</span></div><p>Changes grouped by when they occurred.</p></div></div><div class="table-scroll" role="region" aria-label="Incidents table" tabindex="0"><table class="compact"><caption>Grouped security incidents</caption><thead><tr><th scope="col">Incident / last seen</th><th scope="col">Changes</th><th scope="col">Score</th><th scope="col">Status</th></tr></thead><tbody id="incidents"><tr><td colspan="4" class="empty">Loading incidents…</td></tr></tbody></table></div><div class="guide">Scores help prioritize review. They do not confirm malicious activity.</div></section>
+    <section class="panel" id="baseline" aria-labelledby="baseline-title"><div class="panel-head"><div><div class="title-line"><h2 id="baseline-title">Baseline differences</h2><span class="count" id="baseline-drift-count">–</span></div><p>Observed files compared with your approved baseline.</p></div></div><div class="baseline-summary" id="baseline-summary">Loading baseline information…</div><ul class="drift-list" id="drift"><li class="empty">Loading differences…</li></ul><details class="guide"><summary>How do I approve expected changes?</summary><p>Review the differences first. To approve trusted changes, run this in a terminal using the same state directory as this dashboard:</p><code>traceguard approve --note "Reviewed expected changes"</code><p>Approval updates the baseline and keeps your audit history.</p></details></section>
+  </div>
+  <section class="panel reports" id="reports" aria-labelledby="reports-title"><div class="reports-title"><svg aria-hidden="true"><use href="#download"/></svg><div><h2 id="reports-title">Your audit, ready to share</h2><p>Download the full history, incidents, and baseline differences.</p></div></div><div class="report-links"><a class="btn" href="/api/report/html" download="traceguard.html" aria-label="Download HTML report">HTML <svg aria-hidden="true"><use href="#download"/></svg></a><a class="btn" href="/api/report/markdown" download="traceguard.md" aria-label="Download Markdown report">Markdown <svg aria-hidden="true"><use href="#download"/></svg></a><a class="btn" href="/api/report/json" download="traceguard.json" aria-label="Download JSON report">JSON <svg aria-hidden="true"><use href="#download"/></svg></a></div></section>
+  <details class="panel guide" id="monitoring-help"><summary>Getting started with monitoring</summary><p>The dashboard displays recorded observations. To watch for new changes, run this in another terminal using the same state directory:</p><code>traceguard watch</code><p>For a single check, run <code>traceguard scan</code></p><p>Refresh reloads recorded data; it does not scan your files. Empty directories and directory timestamps are not tracked.</p></details>
+  <footer><span><svg aria-hidden="true"><use href="#lock"/></svg>Local-first. No cloud. Your files stay yours.</span><span id="timezone-note">Times are shown in your local timezone.</span><a href="/docs">API docs</a></footer>
+</main>
 <script>
-let allEvents=[];
-const el=id=>document.getElementById(id);
-function cell(row,value,className=''){const td=document.createElement('td');td.textContent=value;td.className=className;row.append(td);}
-function drawEvents(){el('events').replaceChildren();for(const e of allEvents.filter(e=>!el('severity').value||e.severity===el('severity').value)){const tr=document.createElement('tr');cell(tr,e.timestamp);cell(tr,e.kind);cell(tr,e.old_path?`${e.old_path} → ${e.path}`:e.path);cell(tr,`${e.severity} (${e.score})`,e.severity);cell(tr,e.reasons.join('; '));el('events').append(tr);}}
-async function get(path){const r=await fetch(path);if(!r.ok){const d=await r.json();throw new Error(d.detail||`Request failed: ${r.status}`);}return r.json();}
-async function refresh(){try{const [s,events,incidents,drift]=await Promise.all(['/api/status','/api/events','/api/incidents','/api/drift'].map(get));el('error').textContent='';el('integrity').textContent='Integrity verified';el('cards').replaceChildren();for(const [label,value] of [['Baseline files',s.baseline_files],['Observed files',s.observed_files],['Baseline differences',s.drift_count],['Recorded changes',s.event_count],['Incidents',s.incident_count]]){const card=document.createElement('div');card.className='card';card.textContent=label;const n=document.createElement('span');n.className='number';n.textContent=value;card.append(n);el('cards').append(card);}allEvents=events;drawEvents();el('incidents').replaceChildren();for(const i of incidents){const tr=document.createElement('tr');for(const k of ['id','last_seen','event_count','score','status'])cell(tr,i[k]);el('incidents').append(tr);}el('drift').replaceChildren();for(const d of drift){const li=document.createElement('li');li.textContent=`${d.kind}: ${d.old_path?d.old_path+' → ':''}${d.path}`;el('drift').append(li);}if(!drift.length){const li=document.createElement('li');li.textContent='Observed files match the approved baseline.';el('drift').append(li);}}catch(e){el('error').textContent=e.message;el('integrity').textContent='Unable to verify';}}
-el('refresh').onclick=refresh;el('severity').onchange=drawEvents;refresh();setInterval(refresh,5000);
+'use strict';
+const el = id => document.getElementById(id);
+const number = value => new Intl.NumberFormat().format(value);
+const severityNames = new Set(['low', 'medium', 'high', 'critical']);
+let allEvents = [], totalEvents = 0, busy = false, lastUpdated = null, snapshot = '', hasData = false;
+function node(tag, className = '', text = '') {
+  const item = document.createElement(tag);
+  item.className = className; item.textContent = text;
+  return item;
+}
+function icon(name) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  svg.setAttribute('aria-hidden', 'true'); use.setAttribute('href', '#' + name);
+  svg.append(use); return svg;
+}
+function cell(row, value = '', className = '') {
+  const td = node('td', className, value); row.append(td); return td;
+}
+function empty(container, title, description, columns = 0) {
+  const content = node(columns ? 'td' : 'li', 'empty');
+  if (columns) content.colSpan = columns;
+  content.append(icon('shield'), node('strong', '', title), node('p', '', description));
+  if (columns) { const row = node('tr'); row.append(content); container.replaceChildren(row); }
+  else container.replaceChildren(content);
+}
+function formatDate(value, options) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value || 'Unknown') : date.toLocaleString(undefined, options);
+}
+function timeCell(td, value) {
+  const time = node('time', 'time', formatDate(value, {hour:'2-digit', minute:'2-digit', second:'2-digit'}));
+  time.dateTime = value; time.title = value + ' (UTC)';
+  time.append(node('span', 'date', formatDate(value, {month:'short', day:'numeric', year:'numeric'})));
+  td.append(time);
+}
+function pathContent(container, item) {
+  container.append(node('span', '', item.path));
+  if (item.old_path) container.append(node('span', 'old-path', 'From ' + item.old_path));
+}
+function drawEvents() {
+  const query = el('search').value.trim().toLowerCase();
+  const severity = el('severity').value, kind = el('kind').value;
+  const filtered = allEvents.filter(event => (!severity || event.severity === severity) && (!kind || event.kind === kind) && (!query || [event.path, event.old_path, ...event.reasons].join(' ').toLowerCase().includes(query)));
+  const filtering = Boolean(query || severity || kind);
+  el('clear-filters').hidden = !filtering;
+  el('activity-count').textContent = number(allEvents.length) + ' recent';
+  el('event-summary').textContent = `${number(filtered.length)} shown · Latest ${number(allEvents.length)} of ${number(totalEvents)} recorded changes`;
+  const rows = document.createDocumentFragment();
+  for (const event of filtered) {
+    const row = node('tr'); pathContent(cell(row, '', 'file-path'), event);
+    const change = node('span', 'kind');
+    change.append(node('span', 'kind-mark', ({created:'+', modified:'~', deleted:'−', renamed:'↗', metadata:'≡', database_tampering:'!'})[event.kind] || '•'), document.createTextNode(event.kind.replaceAll('_', ' ')));
+    cell(row).append(change);
+    const badge = node('span', 'badge ' + (severityNames.has(event.severity) ? event.severity : ''), event.severity);
+    badge.prepend(node('span', 'dot'));
+    cell(row).append(badge, node('span', 'score', 'Score ' + number(event.score)));
+    timeCell(cell(row), event.timestamp);
+    const reason = cell(row, event.reasons[0] || 'File change recorded.', 'reason');
+    if (event.reasons.length > 1) {
+      const details = node('details'), list = node('ul');
+      for (const text of event.reasons.slice(1)) list.append(node('li', '', text));
+      details.append(node('summary', '', `${event.reasons.length - 1} more reason${event.reasons.length > 2 ? 's' : ''}`), list); reason.append(details);
+    }
+    rows.append(row);
+  }
+  el('events').replaceChildren(rows);
+  if (!filtered.length) empty(el('events'), filtering ? 'No matching changes' : 'Your file activity starts here', filtering ? 'Try a different search or clear your filters.' : 'Run traceguard watch or traceguard scan to record file changes.', 5);
+}
+function drawIncidents(incidents) {
+  const rows = document.createDocumentFragment();
+  for (const incident of incidents) {
+    const row = node('tr'), identity = cell(row);
+    identity.append(node('strong', '', 'INC-' + String(incident.id).padStart(3, '0')));
+    timeCell(identity, incident.last_seen);
+    cell(row, number(incident.event_count)); cell(row, number(incident.score));
+    cell(row).append(node('span', 'badge', incident.status)); rows.append(row);
+  }
+  el('incidents').replaceChildren(rows);
+  if (!incidents.length) empty(el('incidents'), 'No incidents recorded', 'Related file changes will appear here as they are detected.', 4);
+  el('incidents-count').textContent = number(incidents.length);
+}
+function drawDrift(drift, status) {
+  const items = document.createDocumentFragment();
+  for (const difference of drift) {
+    const item = node('li'), path = node('span', 'file-path'); pathContent(path, difference);
+    item.append(path, node('span', 'badge', difference.kind.replaceAll('_', ' '))); items.append(item);
+  }
+  el('drift').replaceChildren(items);
+  if (!drift.length) empty(el('drift'), 'Everything matches', 'Observed files match your approved baseline.');
+  el('baseline-drift-count').textContent = number(drift.length);
+  const approval = status.last_approval;
+  el('baseline-summary').textContent = approval ? 'Last approved ' + formatDate(approval.timestamp, {dateStyle:'medium', timeStyle:'short'}) + (approval.note ? ' · ' + approval.note : '') : 'No baseline approval recorded.';
+}
+function drawStatus(status) {
+  el('observed-count').textContent = number(status.observed_files);
+  el('baseline-count').textContent = number(status.baseline_files) + ' files in approved baseline';
+  el('drift-count').textContent = number(status.drift_count);
+  el('event-count').textContent = number(status.event_count);
+  el('incident-count').textContent = number(status.incident_count);
+  el('nav-incidents').textContent = number(status.incident_count);
+  el('health').className = 'health ' + (status.drift_count ? 'warning' : 'good');
+  el('integrity-label').textContent = 'Audit integrity verified';
+  el('health-title').textContent = status.drift_count ? `${number(status.drift_count)} baseline difference${status.drift_count === 1 ? '' : 's'} to review` : 'Your observed files match the baseline';
+  el('health-description').textContent = status.drift_count ? 'Review the differences below. Approve changes only after you trust them.' : 'No differences in the latest recorded observation. Keep monitoring to capture new changes.';
+}
+async function get(path) {
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(path, {signal:controller.signal, cache:'no-store'});
+    if (!response.ok) {
+      let detail;
+      try { detail = (await response.json()).detail; } catch (_) { /* Fall back to HTTP status. */ }
+      const error = new Error(typeof detail === 'string' ? detail : `Request failed (HTTP ${response.status}).`);
+      error.integrityFailure = response.status === 409; throw error;
+    }
+    return await response.json();
+  } finally { clearTimeout(timeout); }
+}
+async function refresh() {
+  if (busy) return;
+  busy = true; el('refresh').disabled = true; el('retry').disabled = true;
+  el('refresh-label').textContent = 'Refreshing…';
+  try {
+    const [status, events, incidents, drift] = await Promise.all(['/api/status','/api/events','/api/incidents','/api/drift'].map(get));
+    if (status.integrity !== 'ok') throw new Error('Audit integrity could not be verified.');
+    el('error').hidden = true; totalEvents = status.event_count;
+    const nextSnapshot = JSON.stringify([status, events, incidents, drift.map(({kind, path, old_path}) => ({kind, path, old_path}))]);
+    if (nextSnapshot !== snapshot) {
+      allEvents = events; drawEvents(); drawIncidents(incidents); drawDrift(drift, status); snapshot = nextSnapshot;
+    }
+    drawStatus(status); hasData = true; lastUpdated = new Date();
+    el('updated').textContent = 'Updated ' + lastUpdated.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  } catch (error) {
+    el('error').hidden = false;
+    el('error-title').textContent = error.integrityFailure ? 'Audit integrity needs your attention' : 'Unable to update the dashboard';
+    el('error-message').textContent = error.name === 'AbortError' ? 'The request timed out. Check that the local server is running, then try again.' : error.message;
+    el('stale-message').textContent = lastUpdated ? 'Showing previously loaded data from ' + lastUpdated.toLocaleTimeString() + '. Counts may be out of date.' : 'Check that TraceGuard is initialized and the local server is running.';
+    el('health').className = 'health failed';
+    el('health-title').textContent = error.integrityFailure ? 'Audit integrity verification failed' : 'Workspace status unavailable';
+    el('health-description').textContent = error.integrityFailure ? 'Inspect your local state before trusting these records. Run traceguard integrity for details.' : 'Try refreshing after the local server becomes available.';
+    el('integrity-label').textContent = 'Unable to verify';
+    if (!hasData) {
+      empty(el('events'), 'Activity is unavailable', 'Reconnect to load your recorded changes.', 5);
+      empty(el('incidents'), 'Incidents are unavailable', 'Try again when your workspace is available.', 4);
+      empty(el('drift'), 'Baseline is unavailable', 'Try again when your workspace is available.');
+      el('activity-count').textContent = 'Unavailable'; el('event-summary').textContent = 'Waiting for workspace data';
+      el('baseline-summary').textContent = 'Baseline information could not be loaded.';
+    }
+  } finally {
+    busy = false; el('refresh').disabled = false; el('retry').disabled = false;
+    el('refresh-label').textContent = 'Refresh';
+  }
+}
+el('refresh').addEventListener('click', refresh); el('retry').addEventListener('click', refresh);
+for (const id of ['search','severity','kind']) el(id).addEventListener(id === 'search' ? 'input' : 'change', () => { if (hasData) drawEvents(); });
+el('clear-filters').addEventListener('click', () => { for (const id of ['search','severity','kind']) el(id).value = ''; drawEvents(); el('search').focus(); });
+el('auto-refresh').addEventListener('change', () => { if (el('auto-refresh').checked) refresh(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && el('auto-refresh').checked) refresh(); });
+const navigation = [...document.querySelectorAll('.side-nav a')];
+function updateNavigation() {
+  let current = 'overview', nearest = -Infinity;
+  for (const link of navigation) {
+    const top = document.querySelector(link.hash).getBoundingClientRect().top;
+    if (top <= 140 && (top > nearest || (top === nearest && link.hash === location.hash))) {
+      current = link.hash.slice(1); nearest = top;
+    }
+  }
+  if (window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) current = 'reports';
+  for (const link of navigation) {
+    const active = link.hash === '#' + current; link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');
+  }
+}
+window.addEventListener('scroll', updateNavigation, {passive:true});
+window.addEventListener('hashchange', updateNavigation);
+document.querySelector('a[href="#monitoring-help"]').addEventListener('click', () => { el('monitoring-help').open = true; });
+el('timezone-note').textContent = 'Times shown in ' + Intl.DateTimeFormat().resolvedOptions().timeZone + '.';
+refresh();
+setInterval(() => { if (el('auto-refresh').checked && !document.hidden) refresh(); }, 5000);
 </script>
+</body>
 </html>
