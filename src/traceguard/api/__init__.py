@@ -1,1 +1,1 @@
-"""Local read-only dashboard and API."""
+"""Local dashboard, monitoring controls, and audit API."""

@@ -12,7 +12,9 @@ exports can expose names and fingerprints; treat them as private local artifacts
 
 Runtime defaults have no outbound network connections. The local server binds to
 `127.0.0.1`; the CLI rejects public bindings. Assets and documentation are bundled.
-The API is read-only, has no CORS permissions, rejects non-loopback Host headers, and
+Audit API endpoints are read-only. Folder selection requires a custom request header
+and a matching browser Origin, preventing cross-site forms from changing the location.
+The API has no CORS permissions, rejects non-loopback Host headers, and
 sets no-store, anti-framing, and content security headers. Local processes and local
 users can still access the API; there is no authentication. Do not port-forward it.
 Optional email is an explicit user-selected exception and sends counts/scores only.

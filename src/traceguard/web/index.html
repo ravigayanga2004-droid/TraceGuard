@@ -88,6 +88,7 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
 .cinema-caption{position:absolute;bottom:17px;right:21px;margin:0;color:#b0bbd8;font-size:9px;letter-spacing:1.4px;text-transform:uppercase}
 @media(max-width:900px){.cinema-copy{padding:30px 24px;max-width:56%}.cinema h2{font-size:25px}.cinema-description{font-size:11px}}
 @media(max-width:600px){.cinema{min-height:360px}.cinema-copy{padding:25px 22px;max-width:100%}.cinema-eyebrow{font-size:8px;letter-spacing:1.4px;margin-bottom:16px;max-width:50%}.cinema h2{font-size:25px;max-width:260px}.cinema-description{max-width:270px;margin-top:10px}.cinema::after{background:linear-gradient(180deg,#0c1225e8 0%,#0c1225c9 34%,transparent 65%)}.cinema-shield{left:50%;top:72%;width:58px;height:64px}.cinema-shield svg{width:58px;height:58px}.cinema-caption{right:0;width:100%;text-align:center;bottom:15px;font-size:8px}.motion-toggle{right:12px;top:14px;font-size:9px;padding:7px 8px}}
+.monitoring{padding:22px;margin-bottom:22px}.monitoring h2{font-size:16px;margin:0 0 8px}.monitoring p{color:var(--muted);font-size:13px;line-height:1.6;margin:8px 0;overflow-wrap:anywhere}.location-form{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.location-field{flex:1;min-width:200px}.location-field label{display:block;font-size:12px;font-weight:600;margin:10px 0 7px}.location-input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;min-height:42px}.location-message{min-height:20px}.folder-dialog{width:min(620px,calc(100% - 32px));max-height:85vh;padding:24px;border:1px solid var(--line);border-radius:14px;background:#fff;color:inherit}.folder-dialog::backdrop{background:#10182888}.folder-dialog h2{margin:0 0 16px}.folder-list{list-style:none;padding:0;margin:14px 0;max-height:36vh;overflow:auto;border-block:1px solid var(--line)}.folder-list button{width:100%;text-align:left;background:transparent;color:inherit;border:0;border-bottom:1px solid var(--line);padding:12px;overflow-wrap:anywhere}.folder-list button:hover{background:#efedff;color:#5b4de0}.folder-roots{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.folder-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.folder-dialog p{font-size:13px;color:var(--muted)}:root[data-theme="dark"] .folder-dialog{background:#182132}:root[data-theme="dark"] .folder-list button:hover{background:#302a50;color:#c1b7ff}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
 </style>
 </head>
@@ -125,6 +126,17 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
     <div class="topbar"><div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Security overview</strong></div><div class="top-status"><span id="updated">Waiting for first update</span><button class="btn theme-toggle" id="theme-toggle" type="button" aria-pressed="false" title="Switch to dark mode"><svg aria-hidden="true"><use href="#moon"/></svg>Dark mode</button><span class="device-tag"><svg aria-hidden="true"><use href="#lock"/></svg>Local workspace</span></div></div>
     <div class="page-heading"><div><h1>Security overview</h1><p class="subtitle">A clear view of your files. Every change accounted for.</p></div><div class="actions"><button class="btn" id="refresh"><svg aria-hidden="true"><use href="#refresh-icon"/></svg><span id="refresh-label">Refresh</span></button><a class="btn primary" href="#reports"><svg aria-hidden="true"><use href="#download"/></svg>Export report</a></div></div>
     <div class="error" id="error" role="alert" hidden><div><strong id="error-title">Unable to update the dashboard</strong><p id="error-message"></p><p id="stale-message"></p></div><button class="btn" id="retry">Try again</button></div>
+    <section class="panel monitoring" aria-labelledby="monitoring-title">
+      <h2 id="monitoring-title">Monitoring location</h2>
+      <p id="current-location" role="status">Loading selected folder…</p>
+      <form class="location-form" id="location-form">
+        <div class="location-field"><label for="location-path">Folder on this laptop</label><input class="location-input" id="location-path" type="text" placeholder="Enter an absolute folder path" required autocomplete="off" spellcheck="false" aria-describedby="location-help"></div>
+        <button class="btn" id="browse-folder" type="button">Browse folders</button>
+        <button class="btn primary" id="select-folder" type="submit">Monitor this folder</button>
+      </form>
+      <p id="location-help">Includes files in subfolders. Selecting a new location trusts its current files as an initial baseline. Each location keeps its own audit history.</p>
+      <p id="location-message" class="location-message" role="status" aria-live="polite"></p>
+    </section>
     <section class="cinema" id="cinema" aria-labelledby="cinema-title">
       <canvas id="cinema-canvas" aria-hidden="true"></canvas>
       <div class="cinema-copy"><p class="cinema-eyebrow"><span class="dot"></span>TRACEGUARD / FILE INTEGRITY</p><h2 id="cinema-title">Clarity in every change.</h2><p class="cinema-description">Follow your file activity. Understand the changes. Keep your workspace in focus.</p></div>
@@ -151,9 +163,17 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
     <section class="panel" id="baseline" aria-labelledby="baseline-title"><div class="panel-head"><div><div class="title-line"><h2 id="baseline-title">Baseline differences</h2><span class="count" id="baseline-drift-count">–</span></div><p>Observed files compared with your approved baseline.</p></div></div><div class="baseline-summary" id="baseline-summary">Loading baseline information…</div><ul class="drift-list" id="drift"><li class="empty">Loading differences…</li></ul><details class="guide"><summary>How do I approve expected changes?</summary><p>Review the differences first. To approve trusted changes, run this in a terminal using the same state directory as this dashboard:</p><code>traceguard approve --note "Reviewed expected changes"</code><p>Approval updates the baseline and keeps your audit history.</p></details></section>
   </div>
   <section class="panel reports" id="reports" aria-labelledby="reports-title"><div class="reports-title"><svg aria-hidden="true"><use href="#download"/></svg><div><h2 id="reports-title">Your audit, ready to share</h2><p>Download the full history, incidents, and baseline differences.</p></div></div><div class="report-links"><a class="btn" href="/api/report/html" download="traceguard.html" aria-label="Download HTML report">HTML <svg aria-hidden="true"><use href="#download"/></svg></a><a class="btn" href="/api/report/markdown" download="traceguard.md" aria-label="Download Markdown report">Markdown <svg aria-hidden="true"><use href="#download"/></svg></a><a class="btn" href="/api/report/json" download="traceguard.json" aria-label="Download JSON report">JSON <svg aria-hidden="true"><use href="#download"/></svg></a></div></section>
-  <details class="panel guide" id="monitoring-help"><summary>Getting started with monitoring</summary><p>The dashboard displays recorded observations. To watch for new changes, run this in another terminal using the same state directory:</p><code>traceguard watch</code><p>For a single check, run <code>traceguard scan</code></p><p>Refresh reloads recorded data; it does not scan your files. Empty directories and directory timestamps are not tracked.</p></details>
+  <details class="panel guide" id="monitoring-help"><summary>Getting started with monitoring</summary><p>Choose a folder in Monitoring location above. TraceGuard watches that folder and its subfolders while this server runs, even if you close this browser tab. Stop the server with Ctrl+C to stop its monitor.</p><p>For monitoring without the dashboard, run <code>traceguard watch</code>. For a single check, run <code>traceguard scan</code>. Commands use the last folder selected for the same state directory. Stop any separately started watcher before switching folders.</p><p>Refresh reloads recorded data; it does not scan your files. Empty directories and directory timestamps are not tracked.</p></details>
   <footer><span><svg aria-hidden="true"><use href="#lock"/></svg>Local-first. No cloud. Your files stay yours.</span><span id="timezone-note">Times are shown in your local timezone.</span><a href="/docs">API docs</a></footer>
 </main>
+<dialog class="folder-dialog" id="folder-dialog" aria-labelledby="folder-title">
+  <h2 id="folder-title">Choose a folder to monitor</h2>
+  <form class="location-form" id="folder-navigation"><div class="location-field"><label for="folder-path">Folder path</label><input class="location-input" id="folder-path" autocomplete="off" spellcheck="false" required></div><button class="btn" id="folder-go" type="submit">Go</button><button class="btn" id="folder-up" type="button">Up</button></form>
+  <div class="folder-roots" id="folder-roots" aria-label="Home and drives"></div>
+  <p id="folder-message" role="status" aria-live="polite"></p>
+  <ul class="folder-list" id="folder-list" aria-label="Subfolders"></ul>
+  <div class="folder-actions"><button class="btn" id="folder-cancel" type="button">Cancel</button><button class="btn primary" id="folder-choose" type="button" disabled>Use this folder</button></div>
+</dialog>
 <script>
 'use strict';
 const el = id => document.getElementById(id);
@@ -366,6 +386,72 @@ function drawStatus(status) {
   el('health-title').textContent = status.drift_count ? `${number(status.drift_count)} baseline difference${status.drift_count === 1 ? '' : 's'} to review` : 'Your observed files match the baseline';
   el('health-description').textContent = status.drift_count ? 'Review the differences below. Approve changes only after you trust them.' : 'No differences in the latest recorded observation. Keep monitoring to capture new changes.';
 }
+let selectingFolder = false, browserFolder = null, browserParent = null, browsing = false;
+function drawMonitoring(info) {
+  el('current-location').textContent = info.root
+    ? `${info.running ? 'Monitoring' : 'Monitor stopped'}: ${info.root}`
+    : 'No folder selected. Choose a location to start monitoring.';
+  if (!el('location-path').value && info.root) el('location-path').value = info.root;
+  if (info.error) el('location-message').textContent = 'Monitor needs attention: ' + info.error;
+  else if (el('location-message').textContent.startsWith('Monitor needs attention:')) el('location-message').textContent = '';
+}
+async function browseFolders(path) {
+  if (browsing) return;
+  browsing = true; browserFolder = null;
+  for (const id of ['folder-go','folder-up','folder-choose']) el(id).disabled = true;
+  el('folder-message').textContent = 'Loading folders…'; el('folder-list').replaceChildren();
+  try {
+    const data = await get('/api/folders' + (path ? '?path=' + encodeURIComponent(path) : ''));
+    browserFolder = data.path; browserParent = data.parent; el('folder-path').value = data.path;
+    const roots = document.createDocumentFragment();
+    for (const root of data.roots) {
+      const button = node('button', 'btn', root); button.type = 'button';
+      button.addEventListener('click', () => browseFolders(root)); roots.append(button);
+    }
+    el('folder-roots').replaceChildren(roots);
+    for (const folder of data.folders) {
+      const item = node('li'), button = node('button', '', folder.name);
+      button.type = 'button'; button.addEventListener('click', () => browseFolders(folder.path));
+      item.append(button); el('folder-list').append(item);
+    }
+    el('folder-message').textContent = data.folders.length ? 'Open a subfolder or use the current folder.' : 'No subfolders. You can monitor this folder.';
+  } catch (error) { el('folder-message').textContent = error.message; }
+  finally {
+    browsing = false; el('folder-go').disabled = false;
+    el('folder-up').disabled = !browserFolder || !browserParent;
+    el('folder-choose').disabled = !browserFolder;
+  }
+}
+el('browse-folder').addEventListener('click', () => { el('folder-dialog').showModal(); browseFolders(el('location-path').value || null); });
+el('folder-navigation').addEventListener('submit', event => { event.preventDefault(); browseFolders(el('folder-path').value); });
+el('folder-up').addEventListener('click', () => browseFolders(browserParent));
+el('folder-cancel').addEventListener('click', () => el('folder-dialog').close());
+el('folder-choose').addEventListener('click', () => {
+  el('location-path').value = browserFolder; el('folder-dialog').close(); el('select-folder').focus();
+});
+el('location-form').addEventListener('submit', async event => {
+  event.preventDefault(); if (selectingFolder) return;
+  selectingFolder = true;
+  while (busy) await new Promise(resolve => setTimeout(resolve, 50));
+  for (const id of ['select-folder','browse-folder','location-path','refresh']) el(id).disabled = true;
+  el('location-message').textContent = 'Preparing this folder and starting monitoring. Large folders may take a while…';
+  try {
+    const response = await fetch('/api/monitoring', {
+      method:'POST', headers:{'Content-Type':'application/json','X-TraceGuard-Request':'1'},
+      body:JSON.stringify({path:el('location-path').value})
+    });
+    const info = await response.json();
+    if (!response.ok) throw new Error(typeof info.detail === 'string' ? info.detail : 'Unable to select this folder.');
+    drawMonitoring(info); el('location-path').value = info.root;
+    el('location-message').textContent = info.error ? 'Monitor needs attention: ' + info.error : 'Monitoring started. Previous locations retain their audit history.';
+    snapshot = ''; hasData = false; allEvents = []; totalEvents = 0; lastUpdated = null;
+  } catch (error) { el('location-message').textContent = error.message; }
+  finally {
+    selectingFolder = false;
+    for (const id of ['select-folder','browse-folder','location-path','refresh']) el(id).disabled = false;
+    await refresh();
+  }
+});
 async function get(path) {
   const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
   try {
@@ -380,10 +466,23 @@ async function get(path) {
   } finally { clearTimeout(timeout); }
 }
 async function refresh() {
-  if (busy) return;
+  if (busy || selectingFolder) return;
   busy = true; el('refresh').disabled = true; el('retry').disabled = true;
   el('refresh-label').textContent = 'Refreshing…';
   try {
+    const monitoring = await get('/api/monitoring'); drawMonitoring(monitoring);
+    if (!monitoring.root) {
+      el('error').hidden = true;
+      el('health-title').textContent = 'Choose a folder to begin';
+      el('health-description').textContent = 'Use Monitoring location above to select files on this laptop.';
+      el('integrity-label').textContent = 'Awaiting setup';
+      empty(el('events'), 'No monitoring folder selected', 'Choose a folder above to start recording changes.', 5);
+      empty(el('incidents'), 'No incidents yet', 'Select a monitoring folder first.', 4);
+      empty(el('drift'), 'No baseline yet', 'A baseline is created when you select your first folder.');
+      el('baseline-summary').textContent = 'Choose a folder to create its initial baseline.';
+      el('activity-count').textContent = '0'; el('event-summary').textContent = 'Waiting for folder selection';
+      return;
+    }
     const [status, events, incidents, drift] = await Promise.all(['/api/status','/api/events','/api/incidents','/api/drift'].map(get));
     if (status.integrity !== 'ok') throw new Error('Audit integrity could not be verified.');
     el('error').hidden = true; totalEvents = status.event_count;
