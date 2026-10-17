@@ -22,13 +22,18 @@ def file_record(path: Path, relative: str) -> FileRecord:
             after = os.fstat(stream.fileno())
         current = path.lstat()
 
-        def signature(s: os.stat_result) -> tuple[int, int, int, int, int]:
-            return (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_mode)
+        def signature(s: os.stat_result) -> tuple[int, int, int, int]:
+            return (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns)
 
         # Windows Python versions can expose different ctime semantics through
-        # path stat and descriptor stat. Compare ctime only within each source.
+        # path stat and descriptor stat. Path stat also infers executable mode
+        # bits from extensions such as .cmd, while descriptor stat does not.
+        # Compare mode and ctime within each source, retaining identity, size,
+        # and mtime checks across both sources.
         if (
             signature(before) == signature(opened) == signature(after) == signature(current)
+            and before.st_mode == current.st_mode
+            and opened.st_mode == after.st_mode
             and before.st_ctime_ns == current.st_ctime_ns
             and opened.st_ctime_ns == after.st_ctime_ns
         ):
@@ -37,7 +42,7 @@ def file_record(path: Path, relative: str) -> FileRecord:
                 sha256=digest,
                 size=after.st_size,
                 mtime_ns=after.st_mtime_ns,
-                mode=stat.S_IMODE(after.st_mode),
+                mode=stat.S_IMODE(current.st_mode),
                 uid=getattr(after, "st_uid", 0),
                 gid=getattr(after, "st_gid", 0),
                 device=after.st_dev,
