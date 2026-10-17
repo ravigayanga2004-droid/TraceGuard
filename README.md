@@ -37,7 +37,27 @@ access to a package index or an existing local wheel cache; runtime is offline b
 
 ## Start monitoring
 
-Create a harmless directory (PowerShell):
+To choose a folder from the dashboard, run:
+
+```text
+traceguard serve
+```
+
+Open **http://127.0.0.1:8765** and use **Monitoring location**. Click **Browse folders**
+to navigate your laptop's folders and drives, or enter an absolute folder path. Click
+**Monitor this folder** to create its initial trusted baseline and start watching it
+and its subfolders. Review the files before selecting a new location. The server
+monitors while it runs, even if you close the browser tab; Ctrl+C stops it.
+
+The selected folder is saved across server restarts. Switching locations preserves
+each folder's baseline, changes, incidents, and approvals separately; returning to a
+folder resumes its existing history. The selection is stored in the integrity-protected
+database, with additional locations under the state directory's `locations/` folder.
+CLI commands using the same `--state` also use the last selected location. Stop any
+separately started `watch` process before switching folders. Run one dashboard server
+per state directory.
+
+For a command-line workflow instead, create a harmless directory (PowerShell):
 
 ```powershell
 New-Item -ItemType Directory -Force demo-monitored-directory
@@ -52,16 +72,17 @@ For macOS/Linux, create the directory with `mkdir -p demo-monitored-directory` a
 file with `printf 'Trusted example\n' > demo-monitored-directory/hello.txt`, then use the
 same `traceguard` commands. Stop monitoring with Ctrl+C.
 
-In another terminal, activate the same environment and start the dashboard:
+After stopping `watch`, start the dashboard:
 
 ```text
 traceguard serve
 ```
 
-Open **http://127.0.0.1:8765**. The read-only dashboard shows baseline drift, recent
+Open **http://127.0.0.1:8765**. The dashboard shows baseline drift, recent
 changes with scoring explanations, grouped incidents, and report downloads. All assets
-and API documentation are local; no CDN is used. `serve` does not start monitoring;
-run `watch` in another terminal or run `scan` manually. Use Ctrl+C to stop the server.
+and API documentation are local; no CDN is used. `serve` starts monitoring the selected
+location automatically, so a separate `watch` process is unnecessary while it runs.
+Use Ctrl+C to stop the server.
 
 Use the sidebar to jump to file activity, incidents, baseline differences, or report
 downloads. Search recent activity by file path or scoring reason, combine severity
@@ -94,8 +115,9 @@ entire event and approval history. Approval prompts unless `--yes` is supplied.
 
 All commands accept `--state PATH` **after the command name**. State defaults to
 `.traceguard` relative to the current working directory, or `TRACEGUARD_STATE` if set.
-Use the same state path in every terminal. Separate state directories support separate
-monitoring roots. Internal configuration stores the resolved local monitoring path;
+Use the same state path in every terminal. Separate state directories support independent
+monitoring setups; the dashboard can switch between folders within one setup.
+Internal configuration stores the resolved local monitoring path;
 file records and events use portable relative paths. Reinitialize into a new state
 directory if the monitored root moves to another device or location.
 
