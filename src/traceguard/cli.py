@@ -15,7 +15,7 @@ from rich.table import Table
 
 from traceguard import baseline
 from traceguard.api.app import create_app
-from traceguard.config import state_directory
+from traceguard.config import selected_state, state_directory
 from traceguard.database import Database
 from traceguard.integrity import IntegrityError
 from traceguard.models import Settings
@@ -54,7 +54,7 @@ def init(
     directory = directory.absolute()
     if is_link(directory):
         raise ValueError("Monitoring root must not be a symlink or junction")
-    target = state_directory(state)
+    target = state_directory(state, selected=False)
     root = directory.resolve()
     if root == target or target in root.parents:
         raise ValueError("Monitoring root cannot be inside the state directory")
@@ -130,15 +130,16 @@ def serve(
     host: str = "127.0.0.1",
     port: Annotated[int, typer.Option(min=1, max=65535)] = 8765,
 ) -> None:
-    """Serve the read-only dashboard on loopback. Run watch separately."""
+    """Serve the dashboard and monitor its selected folder on loopback."""
     try:
         host = str(ipaddress.ip_address(host))
         if host not in {"127.0.0.1", "::1"}:
             raise ValueError("Dashboard binding is restricted to 127.0.0.1 or ::1")
     except ValueError as exc:
         raise ValueError("Use a loopback IP such as 127.0.0.1 or ::1") from exc
-    target = state_directory(state)
-    Database(target).check()
+    target = state_directory(state, selected=False)
+    if (target / "config.json").exists():
+        Database(target).check()
     uvicorn.run(create_app(target), host=host, port=port, access_log=False)
 
 
@@ -174,7 +175,16 @@ def integrity(
     yes: Annotated[bool, typer.Option("--yes", help="Confirm integrity recovery.")] = False,
 ) -> None:
     """Verify database/config integrity; recovery requires explicit acknowledgment."""
-    database = Database(state_directory(state))
+    target = state_directory(state, selected=False)
+    if acknowledge:
+        try:
+            target = selected_state(target)
+        except IntegrityError:
+            # Recovery must remain possible when the catalog itself is suspect.
+            pass
+    else:
+        target = state_directory(state)
+    database = Database(target)
     if acknowledge:
         if not yes:
             typer.confirm(
