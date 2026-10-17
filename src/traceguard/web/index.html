@@ -3,8 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <title>TraceGuard · Security overview</title>
+<script>
+// Apply the saved theme before painting the page to avoid a bright flash.
+(() => {
+  let savedTheme;
+  try { savedTheme = localStorage.getItem('traceguard-theme'); } catch (_) { /* Storage may be unavailable. */ }
+  document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'light'
+    ? savedTheme : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+})();
+</script>
 <style>
 :root{font-family:Inter,"Segoe UI",system-ui,sans-serif;color:#262d42;background:#f5f6fa;font-synthesis:none;--muted:#646e83;--line:#e5e8f0;--accent:#5b4de0;--green:#167457;--red:#b7324b;--amber:#916009}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:25px}body{margin:0}button,input,select{font:inherit}a{color:inherit}button,a,select,summary{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:wait;opacity:.6}:focus-visible{outline:3px solid #8c80ff;outline-offset:4px}[hidden]{display:none!important}svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.icon-defs{position:absolute;width:0;height:0;overflow:hidden}.skip{position:fixed;top:-80px;left:20px;z-index:10;background:white;padding:14px}.skip:focus{top:12px}
@@ -31,6 +40,54 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
   #events .reason{grid-column:1/-1;min-width:0;max-width:none;font-size:12px}
   #events .empty{grid-column:1/-1}
 }
+:root{color-scheme:light}
+.theme-toggle{min-height:34px;padding:7px 10px;font-size:11px}
+.theme-toggle[aria-pressed="true"]{background:#efedff;color:var(--accent);border-color:#d7d1ff}
+:root[data-theme="dark"]{color-scheme:dark;color:#e5e9f4;background:#0f1420;--muted:#a4afc4;--line:#2b3549;--accent:#b0a4ff;--green:#77d8b2;--red:#ff9eb0;--amber:#f0c677}
+:root[data-theme="dark"] :is(.sidebar,.health,.stat,.panel,.skip){background:#181f2e}
+:root[data-theme="dark"] :is(.workspace,.date,.score,footer,th){color:#a4afc4}
+:root[data-theme="dark"] .brand-mark{background:#7764ed}
+:root[data-theme="dark"] :is(.breadcrumb strong,.file-path,.empty strong){color:#e5e9f4}
+:root[data-theme="dark"] :is(.time,.kind,.guide summary){color:#bec8dd}
+:root[data-theme="dark"] .side-nav a:hover{background:#24273c}
+:root[data-theme="dark"] :is(.side-nav a.active,.theme-toggle[aria-pressed="true"]){background:#302a50;color:#c1b7ff}
+:root[data-theme="dark"] .nav-count{background:#44386f;color:#e0d9ff}
+:root[data-theme="dark"] :is(.local-card,.baseline-summary,th){background:#1c2536}
+:root[data-theme="dark"] .device-tag{background:#18372d;border-color:#2c5747}
+:root[data-theme="dark"] .btn{background:#232c3e;border-color:#3c4861;color:#d9e0ef}
+:root[data-theme="dark"] .btn:hover{background:#303b52}
+:root[data-theme="dark"] .btn.primary{background:#7764ed;border-color:#8876f4;color:#fff}
+:root[data-theme="dark"] .btn.primary:hover{background:#8673f5}
+:root[data-theme="dark"] .theme-toggle[aria-pressed="true"]{background:#302a50;color:#c1b7ff;border-color:#5d518c}
+:root[data-theme="dark"] :is(.health-icon,.stat-icon,.reports-title>svg,code){background:#302a50;color:#c1b7ff}
+:root[data-theme="dark"] :is(.health.good .health-icon,.good .integrity,.warning .integrity,.badge.low){background:#1b3b30;color:#89dfb9}
+:root[data-theme="dark"] :is(.health.warning .health-icon,.stat-icon.amber,.badge.medium){background:#40331d;color:#f4cf86}
+:root[data-theme="dark"] :is(.health.failed .health-icon,.failed .integrity,.stat-icon.rose,.badge.critical){background:#452638;color:#ffadbe}
+:root[data-theme="dark"] .stat-icon.blue{background:#243652;color:#a5c4ff}
+:root[data-theme="dark"] .badge.high{background:#452e24;color:#ffbd95}
+:root[data-theme="dark"] :is(.integrity,.count,.badge){background:#2a3448;color:#bbc6db}
+:root[data-theme="dark"] :is(.search input,.filters select){background:#131b29;border-color:#364158;color:#e5e9f4}
+:root[data-theme="dark"] .search input::placeholder{color:#9ca9c1}
+:root[data-theme="dark"] .search svg{color:#a4afc4}
+:root[data-theme="dark"] :is(td,.drift-list li){border-bottom-color:var(--line);border-top-color:var(--line)}
+:root[data-theme="dark"] tbody tr:hover{background:#1d273a}
+:root[data-theme="dark"] .error{background:#36212c;border-color:#724053;color:#ffb5c4}
+@media(max-width:600px){.topbar{flex-wrap:wrap}.top-status{width:100%;justify-content:space-between}}
+.cinema{position:relative;isolation:isolate;overflow:hidden;min-height:260px;margin-bottom:22px;border:1px solid #303b5e;border-radius:14px;background:radial-gradient(ellipse at 78% 55%,#28336a 0%,#121b36 38%,#0c1225 75%);color:#f1f2ff;box-shadow:0 14px 35px #1117330c}
+.cinema canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
+.cinema::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#0c1225f5 0%,#0c1225d9 31%,#0c122528 65%,transparent)}
+.cinema-copy{padding:34px 32px;max-width:52%;position:relative;z-index:1;pointer-events:none}
+.cinema-eyebrow{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:2px;font-weight:650;color:#ada7f5;margin:0 0 19px}
+.cinema-eyebrow .dot{color:#8fdfdb;box-shadow:0 0 12px #70e9ef80}
+.cinema h2{font-size:29px;line-height:1.2;font-weight:650;letter-spacing:-.8px;max-width:310px;text-wrap:balance}
+.cinema-description{font-size:12px;line-height:1.8;color:#b7c1dc;max-width:290px;margin:14px 0 0}
+.cinema-shield{position:absolute;left:75%;top:54%;transform:translate(-50%,-50%);display:grid;place-items:center;width:80px;height:90px;color:#c8ddff;filter:drop-shadow(0 0 20px #9c96ff70);pointer-events:none}
+.cinema-shield svg{width:76px;height:76px;stroke-width:1;fill:#9b97ff12}
+.motion-toggle{position:absolute;right:16px;top:16px;z-index:2;min-height:34px;font-size:10px;padding:7px 10px;background:#121b32cc;color:#d5dcf1;border:1px solid #46516f;border-radius:7px;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.motion-toggle:hover{background:#28324e}.motion-toggle svg{width:12px;height:12px}
+.cinema-caption{position:absolute;bottom:17px;right:21px;margin:0;color:#b0bbd8;font-size:9px;letter-spacing:1.4px;text-transform:uppercase}
+@media(max-width:900px){.cinema-copy{padding:30px 24px;max-width:56%}.cinema h2{font-size:25px}.cinema-description{font-size:11px}}
+@media(max-width:600px){.cinema{min-height:360px}.cinema-copy{padding:25px 22px;max-width:100%}.cinema-eyebrow{font-size:8px;letter-spacing:1.4px;margin-bottom:16px;max-width:50%}.cinema h2{font-size:25px;max-width:260px}.cinema-description{max-width:270px;margin-top:10px}.cinema::after{background:linear-gradient(180deg,#0c1225e8 0%,#0c1225c9 34%,transparent 65%)}.cinema-shield{left:50%;top:72%;width:58px;height:64px}.cinema-shield svg{width:58px;height:58px}.cinema-caption{right:0;width:100%;text-align:center;bottom:15px;font-size:8px}.motion-toggle{right:12px;top:14px;font-size:9px;padding:7px 8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
 </style>
 </head>
@@ -46,6 +103,9 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
 <symbol id="search-icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
 <symbol id="code-icon" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 16"/></symbol>
 <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M20.5 13.2A8.6 8.6 0 0 1 10.8 3.5a8.6 8.6 0 1 0 9.7 9.7Z"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="3"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
 </defs></svg>
 <a class="skip" href="#main">Skip to dashboard</a>
 <aside class="sidebar" aria-label="Application sidebar">
@@ -62,9 +122,16 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
 </aside>
 <main id="main">
   <div id="overview">
-    <div class="topbar"><div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Security overview</strong></div><div class="top-status"><span id="updated">Waiting for first update</span><span class="device-tag"><svg aria-hidden="true"><use href="#lock"/></svg>Local workspace</span></div></div>
+    <div class="topbar"><div class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Security overview</strong></div><div class="top-status"><span id="updated">Waiting for first update</span><button class="btn theme-toggle" id="theme-toggle" type="button" aria-pressed="false" title="Switch to dark mode"><svg aria-hidden="true"><use href="#moon"/></svg>Dark mode</button><span class="device-tag"><svg aria-hidden="true"><use href="#lock"/></svg>Local workspace</span></div></div>
     <div class="page-heading"><div><h1>Security overview</h1><p class="subtitle">A clear view of your files. Every change accounted for.</p></div><div class="actions"><button class="btn" id="refresh"><svg aria-hidden="true"><use href="#refresh-icon"/></svg><span id="refresh-label">Refresh</span></button><a class="btn primary" href="#reports"><svg aria-hidden="true"><use href="#download"/></svg>Export report</a></div></div>
     <div class="error" id="error" role="alert" hidden><div><strong id="error-title">Unable to update the dashboard</strong><p id="error-message"></p><p id="stale-message"></p></div><button class="btn" id="retry">Try again</button></div>
+    <section class="cinema" id="cinema" aria-labelledby="cinema-title">
+      <canvas id="cinema-canvas" aria-hidden="true"></canvas>
+      <div class="cinema-copy"><p class="cinema-eyebrow"><span class="dot"></span>TRACEGUARD / FILE INTEGRITY</p><h2 id="cinema-title">Clarity in every change.</h2><p class="cinema-description">Follow your file activity. Understand the changes. Keep your workspace in focus.</p></div>
+      <span class="cinema-shield" aria-hidden="true"><svg><use href="#shield"/></svg></span>
+      <button class="motion-toggle" id="motion-toggle" type="button"><svg aria-hidden="true"><use id="motion-icon" href="#pause"/></svg><span id="motion-label">Pause animation</span></button>
+      <p class="cinema-caption">Your workspace. In focus.</p>
+    </section>
     <div class="health" id="health" role="status"><span class="health-icon"><svg aria-hidden="true"><use href="#shield"/></svg></span><div class="health-copy"><h2 id="health-title">Getting your workspace ready</h2><p id="health-description">Checking audit integrity and loading the latest file activity…</p></div><span class="integrity"><span class="dot"></span><span id="integrity-label">Checking integrity</span></span></div>
     <div class="stats" aria-label="Workspace statistics">
       <a class="stat" href="#baseline"><div class="stat-top">Observed files <span class="stat-icon"><svg aria-hidden="true"><use href="#files"/></svg></span></div><span class="stat-number" id="observed-count">–</span><span class="stat-note" id="baseline-count">Loading approved baseline…</span></a>
@@ -90,6 +157,111 @@ main{margin-left:228px;padding:30px 38px 24px;max-width:1500px}.topbar{display:f
 <script>
 'use strict';
 const el = id => document.getElementById(id);
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const dark = theme === 'dark';
+  el('theme-toggle').setAttribute('aria-pressed', String(dark));
+  el('theme-toggle').title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+}
+applyTheme(document.documentElement.dataset.theme);
+el('theme-toggle').addEventListener('click', () => {
+  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(theme);
+  try { localStorage.setItem('traceguard-theme', theme); } catch (_) { /* Keep the toggle usable without storage. */ }
+});
+// A decorative scene: animation never represents scanner activity or verification.
+(() => {
+  const scene = el('cinema'), canvas = el('cinema-canvas'), context = canvas.getContext('2d');
+  if (!context) { el('motion-toggle').hidden = true; return; }
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let savedMotion;
+  try { savedMotion = localStorage.getItem('traceguard-motion'); } catch (_) { /* Use the system preference. */ }
+  let enabled = savedMotion === 'playing' || (savedMotion !== 'paused' && !reducedMotion.matches);
+  let width = 0, height = 0, frameId = 0, lastFrame = 0, sceneTime = 0, inView = true;
+  const stars = Array.from({length:65}, (_, index) => ({
+    x: ((index * 73 + 19) % 997) / 997,
+    y: ((index * 137 + 51) % 991) / 991,
+    size: index % 5 === 0 ? 1.4 : .7,
+    phase: index * 1.71
+  }));
+  function draw(time) {
+    if (!width || !height) return;
+    const mobile = window.matchMedia('(max-width:600px)').matches;
+    const cx = width * (mobile ? .5 : .75), cy = height * (mobile ? .72 : .54);
+    const radius = Math.min(mobile ? width * .30 : width * .20, mobile ? 99 : 180);
+    context.clearRect(0, 0, width, height);
+    const glow = context.createRadialGradient(cx, cy, 5, cx, cy, radius * 1.8);
+    glow.addColorStop(0, '#9990ff30'); glow.addColorStop(.5, '#5758cc18'); glow.addColorStop(1, '#5758cc00');
+    context.fillStyle = glow; context.fillRect(0, 0, width, height);
+    for (const star of stars) {
+      const alpha = .18 + .16 * (1 + Math.sin(time * .45 + star.phase));
+      context.fillStyle = `rgba(183,202,255,${alpha})`;
+      context.beginPath(); context.arc(star.x * width, star.y * height, star.size, 0, Math.PI * 2); context.fill();
+    }
+    // A drifting perspective grid sits behind the orbital trails.
+    context.lineWidth = .65; context.strokeStyle = '#7488d519';
+    const horizon = cy + radius * .25, floor = height + 50;
+    for (let column = -7; column <= 7; column++) {
+      context.beginPath(); context.moveTo(cx + column * 18, horizon); context.lineTo(cx + column * 100, floor); context.stroke();
+    }
+    for (let row = 0; row < 9; row++) {
+      const depth = ((row + time * .13) % 9) / 9;
+      const y = horizon + depth * depth * (floor - horizon);
+      context.beginPath(); context.moveTo(0, y); context.lineTo(width, y); context.stroke();
+    }
+    for (let orbit = 0; orbit < 3; orbit++) {
+      const rx = radius * (1 + orbit * .14), ry = radius * (.37 + orbit * .07);
+      const rotation = -.36 + orbit * .76 + Math.sin(time * .12) * .08;
+      context.save(); context.translate(cx, cy); context.rotate(rotation);
+      context.lineWidth = .8; context.strokeStyle = orbit === 1 ? '#80e5de38' : '#a8a0ff38';
+      context.beginPath(); context.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); context.stroke();
+      const angle = time * (.26 + orbit * .09) + orbit * 2.1;
+      for (let tail = 0; tail < 26; tail++) {
+        const theta = angle - tail * .023;
+        context.fillStyle = orbit === 1 ? `rgba(135,241,226,${.9 * (1 - tail / 26)})` : `rgba(190,176,255,${.9 * (1 - tail / 26)})`;
+        context.beginPath(); context.arc(Math.cos(theta) * rx, Math.sin(theta) * ry, tail ? 1.4 : 2.8, 0, Math.PI * 2); context.fill();
+      }
+      context.restore();
+    }
+    // A slow scan line adds depth without flashing or covering any controls.
+    const scanY = cy - radius + ((time * .055 + .4) % 1) * radius * 2;
+    const scanGlow = context.createLinearGradient(cx - radius, 0, cx + radius, 0);
+    scanGlow.addColorStop(0, '#8ae6eb00'); scanGlow.addColorStop(.5, '#8ae6eb50'); scanGlow.addColorStop(1, '#8ae6eb00');
+    context.strokeStyle = scanGlow; context.lineWidth = 1;
+    context.beginPath(); context.moveTo(cx - radius, scanY); context.lineTo(cx + radius, scanY); context.stroke();
+  }
+  function tick(now) {
+    frameId = 0;
+    if (!lastFrame) lastFrame = now;
+    const elapsed = (now - lastFrame) / 1000;
+    if (elapsed >= 1 / 30) { sceneTime += Math.min(elapsed, .1); draw(sceneTime); lastFrame = now; }
+    frameId = requestAnimationFrame(tick);
+  }
+  function syncPlayback() {
+    const playing = enabled && inView && !document.hidden;
+    if (playing && !frameId) { lastFrame = 0; frameId = requestAnimationFrame(tick); }
+    if (!playing && frameId) { cancelAnimationFrame(frameId); frameId = 0; lastFrame = 0; }
+    el('motion-label').textContent = enabled ? 'Pause animation' : 'Play animation';
+    el('motion-icon').setAttribute('href', enabled ? '#pause' : '#play');
+    scene.dataset.motion = playing ? 'playing' : 'paused';
+  }
+  function resize() {
+    width = scene.clientWidth; height = scene.clientHeight;
+    const scale = Math.min(window.devicePixelRatio || 1, 1.5);
+    canvas.width = Math.round(width * scale); canvas.height = Math.round(height * scale);
+    context.setTransform(scale, 0, 0, scale, 0, 0); draw(sceneTime);
+  }
+  el('motion-toggle').addEventListener('click', () => {
+    enabled = !enabled; savedMotion = enabled ? 'playing' : 'paused';
+    try { localStorage.setItem('traceguard-motion', savedMotion); } catch (_) { /* Playback still works without storage. */ }
+    syncPlayback();
+  });
+  reducedMotion.addEventListener('change', () => { if (!savedMotion) { enabled = !reducedMotion.matches; syncPlayback(); } });
+  document.addEventListener('visibilitychange', syncPlayback);
+  new IntersectionObserver(entries => { inView = entries[0].isIntersecting; syncPlayback(); }).observe(scene);
+  new ResizeObserver(resize).observe(scene);
+  resize(); syncPlayback();
+})();
 const number = value => new Intl.NumberFormat().format(value);
 const severityNames = new Set(['low', 'medium', 'high', 'critical']);
 let allEvents = [], totalEvents = 0, busy = false, lastUpdated = null, snapshot = '', hasData = false;
