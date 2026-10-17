@@ -171,3 +171,25 @@ def test_serve_allows_first_run_setup(tmp_path: Path, monkeypatch) -> None:
     result = CliRunner().invoke(app, ["serve", "--state", str(tmp_path / "new-state")])
     assert result.exit_code == 0, result.output
     assert calls[0]["host"] == "127.0.0.1"
+
+
+def test_select_folder_with_windows_command_shims(project, tmp_path: Path) -> None:
+    _, state = project
+    root = tmp_path / "projects"
+    shims = root / "Car-Game-Prototype" / "node_modules" / ".bin"
+    shims.mkdir(parents=True)
+    command = shims / "playwright.CMD"
+    command.write_bytes(b"@echo off\r\nrem harmless fixture\r\n")
+    relative = "Car-Game-Prototype/node_modules/.bin/playwright.CMD"
+    with TestClient(create_app(state), base_url="http://127.0.0.1") as client:
+        response = choose(client, root)
+        assert response.status_code == 200, response.text
+        assert response.json()["running"]
+        assert response.json()["error"] is None
+        selected = Path(response.json()["state"])
+        assert client.get("/api/status").json()["baseline_files"] == 1
+        assert scan(selected) == []
+        command.write_bytes(b"@echo off\r\nrem changed fixture\r\n")
+        scan(selected)
+        events = client.get("/api/events").json()
+        assert any(event["path"] == relative and event["kind"] == "modified" for event in events)
