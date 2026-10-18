@@ -1,5 +1,6 @@
 """Local dashboard, folder selection, and integrity-checked audit reads."""
 
+import sqlite3
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -30,7 +31,7 @@ def create_app(state: Path) -> FastAPI:
         # Preserve access to the dashboard and its actionable integrity errors.
         try:
             monitoring.start()
-        except IntegrityError as exc:
+        except (IntegrityError, OSError, ValueError, sqlite3.DatabaseError) as exc:
             monitoring.error = str(exc)
         try:
             yield
@@ -84,6 +85,22 @@ def create_app(state: Path) -> FastAPI:
     async def integrity_failure(request: Request, exc: IntegrityError) -> JSONResponse:
         return JSONResponse(status_code=409, content={"detail": str(exc), "integrity": "failed"})
 
+    @app.exception_handler(OSError)
+    async def state_unavailable(request: Request, exc: OSError) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+    @app.exception_handler(sqlite3.OperationalError)
+    async def database_unavailable(request: Request, exc: sqlite3.OperationalError) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+    @app.exception_handler(ValueError)
+    async def invalid_state(request: Request, exc: ValueError) -> JSONResponse:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+    @app.exception_handler(sqlite3.DatabaseError)
+    async def database_failure(request: Request, exc: sqlite3.DatabaseError) -> JSONResponse:
+        return JSONResponse(status_code=409, content={"detail": str(exc), "integrity": "failed"})
+
     @app.get("/", response_class=HTMLResponse)
     def dashboard() -> str:
         return (Path(__file__).parent.parent / "web" / "index.html").read_text(encoding="utf-8")
@@ -96,6 +113,7 @@ def create_app(state: Path) -> FastAPI:
             "<h1>TraceGuard local API</h1><p>Audit endpoints are read-only. "
             "No authentication is provided; access is restricted to loopback.</p>"
             "<ul><li><a href='/api/status'>/api/status</a> — summary and latest approval</li>"
+            "<li><a href='/api/dashboard'>/api/dashboard</a> — consistent dashboard snapshot</li>"
             "<li><a href='/api/monitoring'>/api/monitoring</a> "
             "— selected folder and monitor health</li>"
             "<li><a href='/api/folders'>/api/folders</a> — local folder browser</li>"
@@ -128,6 +146,8 @@ def create_app(state: Path) -> FastAPI:
     def select_folder(selection: LocationRequest) -> dict[str, Any]:
         try:
             return monitoring.select(selection.path)
+        except TimeoutError:
+            raise
         except (ValueError, OSError, ScanError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
@@ -135,9 +155,7 @@ def create_app(state: Path) -> FastAPI:
                 raise
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
-    @app.get("/api/status")
-    def status() -> dict[str, Any]:
-        data = report_data(active_state())
+    def summary(data: dict[str, Any]) -> dict[str, Any]:
         return {
             "integrity": "ok",
             "baseline_files": data["baseline_files"],
@@ -147,6 +165,22 @@ def create_app(state: Path) -> FastAPI:
             "incident_count": len(data["incidents"]),
             "last_approval": data["approvals"][0] if data["approvals"] else None,
         }
+
+    @app.get("/api/status")
+    def status() -> dict[str, Any]:
+        return summary(report_data(active_state()))
+
+    @app.get("/api/dashboard")
+    def dashboard_data() -> dict[str, Any]:
+        # Keep the location fixed and read all dashboard values in one transaction.
+        with monitoring.lock:
+            data = report_data(active_state())
+            return {
+                "status": summary(data),
+                "events": data["events"][:100],
+                "incidents": data["incidents"],
+                "drift": data["drift"],
+            }
 
     @app.get("/api/events")
     def events(

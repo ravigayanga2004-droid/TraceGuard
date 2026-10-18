@@ -162,3 +162,27 @@ def test_unicode_paths_are_relative_and_roundtrip(project: tuple[Path, Path]) ->
     event = scan(state)[0]
     assert event.path == "nested/සිංහල λ.txt"
     assert report_data(state)["events"][0]["path"] == event.path
+
+
+def test_root_stat_failure_is_a_retryable_scan_error(project, monkeypatch) -> None:
+    root, state = project
+    original = Path.is_dir
+
+    def inaccessible(path):
+        if path == root:
+            raise PermissionError("root temporarily inaccessible")
+        return original(path)
+
+    monkeypatch.setattr(Path, "is_dir", inaccessible)
+    with pytest.raises(ScanError, match="previous state preserved"):
+        scan(state)
+    assert report_data(state)["observed_files"] == 1
+    assert report_data(state)["events"] == []
+
+
+@pytest.mark.parametrize("field", ["reconcile_seconds", "debounce_seconds"])
+def test_monitor_intervals_must_be_finite(field: str) -> None:
+    from traceguard.models import Settings
+
+    with pytest.raises(ValueError):
+        Settings(root="unused", **{field: float("inf")})

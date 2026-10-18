@@ -10,6 +10,7 @@ from traceguard.baseline import scan
 from traceguard.cli import app
 from traceguard.config import selected_state
 from traceguard.database import Database
+from traceguard.monitoring import Monitoring
 from traceguard.reporting import report_data
 from traceguard.scanner import ScanError
 
@@ -193,3 +194,38 @@ def test_select_folder_with_windows_command_shims(project, tmp_path: Path) -> No
         scan(selected)
         events = client.get("/api/events").json()
         assert any(event["path"] == relative and event["kind"] == "modified" for event in events)
+
+
+def test_monitor_start_is_idempotent_and_close_stops_worker(project) -> None:
+    _, state = project
+    monitoring = Monitoring(state)
+    original = None
+    try:
+        monitoring.start()
+        original = monitoring.thread
+        monitoring.start()
+        assert monitoring.thread is original
+        assert monitoring.info()["running"]
+    finally:
+        monitoring.close()
+        if original is not None:
+            original.join(timeout=5)
+    assert original is not None and not original.is_alive()
+
+
+def test_failed_monitor_start_returns_without_startup_timeout(project, monkeypatch) -> None:
+    _, state = project
+
+    def unavailable(*args):
+        raise OSError("observer unavailable")
+
+    monkeypatch.setattr("traceguard.watcher.WatchService.run", unavailable)
+    monitoring = Monitoring(state)
+    started = time.monotonic()
+    try:
+        monitoring.start()
+        assert time.monotonic() - started < 2
+        assert not monitoring.info()["running"]
+        assert monitoring.error == "observer unavailable"
+    finally:
+        monitoring.close()

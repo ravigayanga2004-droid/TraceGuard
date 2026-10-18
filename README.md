@@ -35,6 +35,22 @@ python -m pip install -e .
 installation, `python -m pip install -e .` is sufficient. Package installation needs
 access to a package index or an existing local wheel cache; runtime is offline by default.
 
+### VS Code
+
+Open the repository folder containing this README. The workspace settings point Python
+and pytest at `.venv`. If VS Code already selected a different interpreter, run
+**Python: Select Interpreter** and choose `.venv/Scripts/python.exe` on Windows
+(`.venv/bin/python` on macOS/Linux). This resolves missing-import diagnostics when the
+dependencies are installed in the project environment rather than the system Python.
+
+Use **Run and Debug → TraceGuard dashboard** (F5) to start the dashboard. The launch
+configuration runs `python -m traceguard serve` from the repository root. For a terminal
+that has not activated the environment, use this PowerShell command:
+
+```powershell
+.\.venv\Scripts\python.exe -m traceguard serve
+```
+
 ## Start monitoring
 
 To choose a folder from the dashboard, run:
@@ -144,6 +160,9 @@ All regular files are streamed through SHA-256 on each scan, including files who
 size and timestamps appear unchanged. A partial or unstable scan aborts without
 advancing observations or recording false deletions. Monitoring retries scan errors;
 integrity failures stop the monitor and require inspection.
+Temporary state-lock, filesystem-access, and SQLite operational errors are retried;
+the dashboard shows monitor errors alongside the last completed observation. Its counts
+and tables load from a single audit snapshot to keep each refresh consistent.
 
 TraceGuard excludes its own state, `.git`, `.venv`, and `__pycache__`. Additional
 `--exclude` patterns match a relative POSIX path or an individual path component using

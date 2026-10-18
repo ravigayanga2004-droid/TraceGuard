@@ -11,7 +11,7 @@ def utcnow() -> str:
 
 
 class Settings(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     root: str
     excludes: list[str] = Field(default_factory=lambda: [".git", ".venv", "__pycache__"])
     reconcile_seconds: float = Field(default=30, ge=0.2)

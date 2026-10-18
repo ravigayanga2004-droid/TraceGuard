@@ -1,5 +1,6 @@
 """Watchdog triggers debounced scans; periodic scans reconcile dropped events."""
 
+import sqlite3
 import threading
 import time
 from collections.abc import Callable
@@ -28,6 +29,7 @@ class WatchService:
         self.on_events = on_events
         self.on_error = on_error
         self.ready = threading.Event()
+        self.startup_complete = threading.Event()
         self.dirty = threading.Event()
         self.last_change = 0.0
 
@@ -51,11 +53,12 @@ class WatchService:
                         service.dirty.set()
 
         observer = Observer()
-        observer.schedule(Handler(), str(root), recursive=True)
-        observer.start()
-        self.ready.set()
         next_scan = 0.0
         try:
+            observer.schedule(Handler(), str(root), recursive=True)
+            observer.start()
+            self.ready.set()
+            self.startup_complete.set()
             while not stop.is_set():
                 now = time.monotonic()
                 if now >= next_scan or (
@@ -64,11 +67,15 @@ class WatchService:
                     self.dirty.clear()
                     try:
                         self.on_events(scan(self.state))
-                    except ScanError as exc:
+                    except (ScanError, OSError, sqlite3.OperationalError) as exc:
                         self.on_error(str(exc))
                     next_scan = time.monotonic() + self.settings.reconcile_seconds
                 stop.wait(0.1)
         finally:
-            observer.stop()
-            observer.join(timeout=10)
             self.ready.clear()
+            try:
+                observer.stop()
+                if observer.ident is not None:
+                    observer.join(timeout=10)
+            finally:
+                self.startup_complete.set()

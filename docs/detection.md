@@ -3,6 +3,8 @@
 Scoring is additive and capped at 100. Every event stores its exact reasons and points.
 Path tests are case-insensitive for security classification and inspect both the old
 and new path on rename. No file contents are interpreted or executed.
+Executable permission checks inspect both before and after records, including deleted
+files and files whose execute bits were removed.
 
 | Rule | Points | Trigger |
 | --- | --- | --- |

@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -147,3 +148,59 @@ def test_framework_telemetry_is_disabled(project: tuple[Path, Path], monkeypatch
         )
     with TestClient(application, base_url="http://127.0.0.1") as client:
         assert client.get("/api/status").status_code == 200
+
+
+def test_dashboard_uses_one_consistent_audit_read(project, monkeypatch) -> None:
+    from unittest.mock import Mock
+
+    root, state = project
+    (root / "new.txt").write_text("new")
+    scan(state)
+    with TestClient(create_app(state), base_url="http://127.0.0.1") as client:
+        read = Mock(wraps=report_data)
+        monkeypatch.setattr("traceguard.api.app.report_data", read)
+        response = client.get("/api/dashboard")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"]["event_count"] == len(data["events"]) == 1
+        assert data["status"]["incident_count"] == len(data["incidents"]) == 1
+        assert data["status"]["drift_count"] == len(data["drift"]) == 1
+        read.assert_called_once_with(state)
+
+
+@pytest.mark.parametrize(
+    ("error", "status"),
+    [
+        (PermissionError("State is unreadable"), 503),
+        (TimeoutError("State is busy; try again"), 503),
+        (sqlite3.OperationalError("database is locked"), 503),
+        (ValueError("Invalid monitoring location in catalog"), 400),
+        (sqlite3.DatabaseError("Database corrupt"), 409),
+    ],
+)
+def test_api_state_errors_return_actionable_json(project, monkeypatch, error, status) -> None:
+    _, state = project
+
+    def failed_read(*args):
+        raise error
+
+    with TestClient(create_app(state), base_url="http://127.0.0.1") as client:
+        monkeypatch.setattr("traceguard.api.app.report_data", failed_read)
+        for endpoint in ("/api/status", "/api/dashboard", "/api/events", "/api/report/json"):
+            response = client.get(endpoint)
+            assert response.status_code == status
+            assert response.json()["detail"] == str(error)
+            assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_dashboard_remains_available_when_state_is_busy(project, monkeypatch) -> None:
+    def busy(*args):
+        raise TimeoutError("State is busy; try again")
+
+    _, state = project
+    monkeypatch.setattr("traceguard.monitoring.Monitoring.active_state", busy)
+    with TestClient(create_app(state), base_url="http://127.0.0.1") as client:
+        assert client.get("/").status_code == 200
+        response = client.get("/api/monitoring")
+        assert response.status_code == 503
+        assert response.json()["detail"] == "State is busy; try again"

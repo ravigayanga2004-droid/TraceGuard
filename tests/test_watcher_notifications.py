@@ -1,9 +1,11 @@
+import sqlite3
 import threading
 import time
 from pathlib import Path
 
 import pytest
 
+from traceguard.integrity import IntegrityError
 from traceguard.models import Event
 from traceguard.notifications import Notifier
 from traceguard.watcher import WatchService
@@ -127,3 +129,77 @@ def test_desktop_notification_is_summary_only(monkeypatch) -> None:
     Notifier(desktop=True)([Event(kind="created", path="private.txt", score=30)])
     notify.assert_called_once()
     assert "private.txt" not in notify.call_args.kwargs["message"]
+
+
+def test_failed_desktop_delivery_does_not_prevent_email(monkeypatch) -> None:
+    import sys
+    from types import SimpleNamespace
+    from unittest.mock import MagicMock
+
+    desktop = MagicMock(side_effect=RuntimeError("desktop unavailable"))
+    email = MagicMock()
+    monkeypatch.setitem(
+        sys.modules, "plyer", SimpleNamespace(notification=SimpleNamespace(notify=desktop))
+    )
+    for name in ("TRACEGUARD_SMTP_HOST", "TRACEGUARD_EMAIL_FROM", "TRACEGUARD_EMAIL_TO"):
+        monkeypatch.setenv(name, "example.invalid")
+    monkeypatch.setattr(Notifier, "send_email", staticmethod(email))
+    Notifier(desktop=True, email=True)([Event(kind="created", path="private.txt")])
+    email.assert_called_once()
+
+
+def test_observer_is_cleaned_up_after_start_failure(project, monkeypatch) -> None:
+    from unittest.mock import MagicMock
+
+    _, state = project
+    observer = MagicMock()
+    observer.ident = None
+    observer.start.side_effect = OSError("observer unavailable")
+    monkeypatch.setattr("traceguard.watcher.Observer", lambda: observer)
+    service = WatchService(state, lambda events: None)
+    with pytest.raises(OSError, match="observer unavailable"):
+        service.run(threading.Event())
+    observer.stop.assert_called_once()
+    assert not service.ready.is_set()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        TimeoutError("State is busy"),
+        PermissionError("Temporarily inaccessible"),
+        sqlite3.OperationalError("database is locked"),
+    ],
+)
+def test_monitor_retries_transient_scan_errors(project, monkeypatch, error) -> None:
+    from unittest.mock import MagicMock
+
+    _, state = project
+    observer = MagicMock()
+    monkeypatch.setattr("traceguard.watcher.Observer", lambda: observer)
+    scans = MagicMock(side_effect=[error, []])
+    monkeypatch.setattr("traceguard.watcher.scan", scans)
+    stop = threading.Event()
+    errors = []
+    service = WatchService(state, lambda events: stop.set(), errors.append)
+    service.run(stop)
+    assert scans.call_count == 2
+    assert errors == [str(error)]
+    observer.stop.assert_called_once()
+    assert not service.ready.is_set()
+
+
+def test_monitor_never_retries_integrity_failures(project, monkeypatch) -> None:
+    from unittest.mock import MagicMock
+
+    _, state = project
+    observer = MagicMock()
+    monkeypatch.setattr("traceguard.watcher.Observer", lambda: observer)
+    scans = MagicMock(side_effect=IntegrityError("Seal mismatch"))
+    monkeypatch.setattr("traceguard.watcher.scan", scans)
+    service = WatchService(state, lambda events: None)
+    with pytest.raises(IntegrityError, match="Seal mismatch"):
+        service.run(threading.Event())
+    scans.assert_called_once_with(state)
+    observer.stop.assert_called_once()
+    assert not service.ready.is_set()

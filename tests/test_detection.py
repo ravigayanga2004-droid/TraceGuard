@@ -77,3 +77,21 @@ def test_ambiguous_rename_is_create_delete() -> None:
         "deleted",
         "deleted",
     ]
+
+
+@pytest.mark.parametrize("kind", ["deleted", "metadata"])
+def test_removing_executable_permissions_retains_executable_risk(kind: str) -> None:
+    before = FileRecord(
+        path="tool",
+        sha256="a" * 64,
+        size=1,
+        mtime_ns=0,
+        mode=0o755,
+        uid=0,
+        gid=0,
+        device=0,
+        inode=1,
+    )
+    after = before.model_copy(update={"mode": 0o644}) if kind == "metadata" else None
+    event = score_event(Event(kind=kind, path="tool", before=before, after=after))
+    assert "Executable: +25" in event.reasons
