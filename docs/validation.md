@@ -1,13 +1,15 @@
 # Validation record
 
-Validated on 2026-10-16:
+Validated on 2026-10-18:
 
 - Clean virtual environment and editable installation: successful; `pip check` passes.
-- pytest: 49 passed, 1 skipped (Windows symlink permission), 1 dependency warning.
+- pytest: 88 passed, 1 skipped (Windows symlink permission), 1 dependency warning.
 - Ruff lint and format checks: passed.
-- mypy: passed for all 17 application modules.
+- mypy: passed for all 18 application modules.
 - Temporary-data demo: passed; JSON, Markdown, and HTML generated.
 - Installed-CLI lifecycle and real loopback dashboard: passed; server stopped cleanly.
+- Dashboard JavaScript: syntax and DOM-stub checks passed using Node, covering data
+  loading, stale-data recovery, monitor health, error classification, and folder reset.
 
 Validation is performed with the repository's `.venv`, using Python 3.14 on Windows.
 The declared minimum is Python 3.11. Windows-specific creation-time behavior is covered
@@ -34,6 +36,10 @@ ambiguous renames; scoring and mass changes across scans; incomplete scans; excl
 state isolation; concurrent scans; integrity tampering, missing state, and recovery;
 API Host restrictions and read-only behavior; report escaping; CLI workflows; real
 Watchdog delivery and periodic reconciliation; and notification opt-in/privacy.
+Regression coverage also includes repeated monitor startup, cleanup after observer
+failure, transient scan retries, stopping on integrity failures, finite timing settings,
+independent notification delivery, executable deletion scoring, consistent dashboard
+snapshots, and JSON errors when local state is busy, invalid, or unreadable.
 
 The symlink-creation test skips if Windows lacks developer-mode/admin permission.
 Actual desktop notifications and external SMTP delivery are optional, environment-
