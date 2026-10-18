@@ -285,6 +285,21 @@ el('theme-toggle').addEventListener('click', () => {
 const number = value => new Intl.NumberFormat().format(value);
 const severityNames = new Set(['low', 'medium', 'high', 'critical']);
 let allEvents = [], totalEvents = 0, busy = false, lastUpdated = null, snapshot = '', hasData = false;
+function resetWorkspace() {
+  snapshot = ''; hasData = false; allEvents = []; totalEvents = 0; lastUpdated = null;
+  for (const id of ['observed-count','drift-count','event-count','incident-count','nav-incidents','incidents-count','baseline-drift-count']) el(id).textContent = '—';
+  el('baseline-count').textContent = 'Awaiting baseline data';
+  el('updated').textContent = 'Waiting for workspace data';
+  el('health').className = 'health';
+  el('health-title').textContent = 'Loading the selected folder';
+  el('health-description').textContent = 'Checking audit integrity and loading file activity.';
+  el('integrity-label').textContent = 'Checking integrity';
+  el('activity-count').textContent = '—'; el('event-summary').textContent = 'Waiting for workspace data';
+  el('baseline-summary').textContent = 'Loading the selected baseline.';
+  empty(el('events'), 'Loading file activity', 'Recorded changes will appear here.', 5);
+  empty(el('incidents'), 'Loading incidents', 'Related changes will appear here.', 4);
+  empty(el('drift'), 'Loading baseline', 'Recorded differences will appear here.');
+}
 function node(tag, className = '', text = '') {
   const item = document.createElement(tag);
   item.className = className; item.textContent = text;
@@ -374,7 +389,7 @@ function drawDrift(drift, status) {
   const approval = status.last_approval;
   el('baseline-summary').textContent = approval ? 'Last approved ' + formatDate(approval.timestamp, {dateStyle:'medium', timeStyle:'short'}) + (approval.note ? ' · ' + approval.note : '') : 'No baseline approval recorded.';
 }
-function drawStatus(status) {
+function drawStatus(status, monitoring) {
   el('observed-count').textContent = number(status.observed_files);
   el('baseline-count').textContent = number(status.baseline_files) + ' files in approved baseline';
   el('drift-count').textContent = number(status.drift_count);
@@ -385,6 +400,11 @@ function drawStatus(status) {
   el('integrity-label').textContent = 'Audit integrity verified';
   el('health-title').textContent = status.drift_count ? `${number(status.drift_count)} baseline difference${status.drift_count === 1 ? '' : 's'} to review` : 'Your observed files match the baseline';
   el('health-description').textContent = status.drift_count ? 'Review the differences below. Approve changes only after you trust them.' : 'No differences in the latest recorded observation. Keep monitoring to capture new changes.';
+  if (!monitoring.running || monitoring.error) {
+    el('health').className = 'health warning';
+    el('health-title').textContent = monitoring.running ? 'Monitoring needs attention' : 'Folder monitoring is stopped';
+    el('health-description').textContent = monitoring.error || 'Select this folder again to restart monitoring. Displayed records reflect the last completed scan.';
+  }
 }
 let selectingFolder = false, browserFolder = null, browserParent = null, browsing = false;
 function drawMonitoring(info) {
@@ -444,7 +464,7 @@ el('location-form').addEventListener('submit', async event => {
     if (!response.ok) throw new Error(typeof info.detail === 'string' ? info.detail : 'Unable to select this folder.');
     drawMonitoring(info); el('location-path').value = info.root;
     el('location-message').textContent = info.error ? 'Monitor needs attention: ' + info.error : 'Monitoring started. Previous locations retain their audit history.';
-    snapshot = ''; hasData = false; allEvents = []; totalEvents = 0; lastUpdated = null;
+    resetWorkspace();
   } catch (error) { el('location-message').textContent = error.message; }
   finally {
     selectingFolder = false;
@@ -457,10 +477,10 @@ async function get(path) {
   try {
     const response = await fetch(path, {signal:controller.signal, cache:'no-store'});
     if (!response.ok) {
-      let detail;
-      try { detail = (await response.json()).detail; } catch (_) { /* Fall back to HTTP status. */ }
-      const error = new Error(typeof detail === 'string' ? detail : `Request failed (HTTP ${response.status}).`);
-      error.integrityFailure = response.status === 409; throw error;
+      let data;
+      try { data = await response.json(); } catch (_) { /* Fall back to HTTP status. */ }
+      const error = new Error(typeof data?.detail === 'string' ? data.detail : `Request failed (HTTP ${response.status}).`);
+      error.integrityFailure = data?.integrity === 'failed'; throw error;
     }
     return await response.json();
   } finally { clearTimeout(timeout); }
@@ -472,6 +492,7 @@ async function refresh() {
   try {
     const monitoring = await get('/api/monitoring'); drawMonitoring(monitoring);
     if (!monitoring.root) {
+      resetWorkspace();
       el('error').hidden = true;
       el('health-title').textContent = 'Choose a folder to begin';
       el('health-description').textContent = 'Use Monitoring location above to select files on this laptop.';
@@ -483,14 +504,14 @@ async function refresh() {
       el('activity-count').textContent = '0'; el('event-summary').textContent = 'Waiting for folder selection';
       return;
     }
-    const [status, events, incidents, drift] = await Promise.all(['/api/status','/api/events','/api/incidents','/api/drift'].map(get));
+    const {status, events, incidents, drift} = await get('/api/dashboard');
     if (status.integrity !== 'ok') throw new Error('Audit integrity could not be verified.');
     el('error').hidden = true; totalEvents = status.event_count;
     const nextSnapshot = JSON.stringify([status, events, incidents, drift.map(({kind, path, old_path}) => ({kind, path, old_path}))]);
     if (nextSnapshot !== snapshot) {
       allEvents = events; drawEvents(); drawIncidents(incidents); drawDrift(drift, status); snapshot = nextSnapshot;
     }
-    drawStatus(status); hasData = true; lastUpdated = new Date();
+    drawStatus(status, monitoring); hasData = true; lastUpdated = new Date();
     el('updated').textContent = 'Updated ' + lastUpdated.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
   } catch (error) {
     el('error').hidden = false;
