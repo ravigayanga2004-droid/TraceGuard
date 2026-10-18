@@ -68,11 +68,14 @@ the server exactly. The custom header prevents cross-origin form submissions; CO
 preflight receives no permission. Audit and approval data cannot be changed through
 the read endpoints. Invalid folder paths and failed initial scans leave the current
 monitor running. Integrity failures return HTTP 409 without resetting state.
+Unavailable or busy state returns HTTP 503 with a JSON error message. Invalid stored
+configuration returns HTTP 400. The dashboard remains accessible during these failures.
 
 | GET endpoint | Result |
 | --- | --- |
 | `/` | Dashboard, refreshed every five seconds |
 | `/api/status` | Counts, verified integrity, most recent approval |
+| `/api/dashboard` | Counts, latest 100 events, incidents, and drift from one audit transaction |
 | `/api/monitoring` | Selected folder, state directory, running status, monitor errors |
 | `/api/folders?path=...` | Local subfolders, parent, home and available drives |
 | `/api/events?limit=100&offset=0` | Newest events, limit 1–1000 |
