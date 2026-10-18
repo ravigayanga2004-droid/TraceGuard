@@ -33,8 +33,6 @@ def excluded(path: Path, root: Path, state: Path, patterns: list[str]) -> bool:
 
 def snapshot(settings: Settings, state: Path) -> dict[str, FileRecord]:
     root = Path(settings.root)
-    if not root.is_dir() or is_link(root):
-        raise ScanError(f"Monitoring root is missing or is a symlink: {root}")
     found: dict[str, FileRecord] = {}
 
     def walk(directory: Path) -> None:
@@ -53,6 +51,8 @@ def snapshot(settings: Settings, state: Path) -> dict[str, FileRecord]:
                     found[relative] = file_record(path, relative)
 
     try:
+        if not root.is_dir() or is_link(root):
+            raise ScanError(f"Monitoring root is missing or is a symlink: {root}")
         walk(root)
     except OSError as exc:
         raise ScanError(f"Incomplete scan; previous state preserved: {exc}") from exc
