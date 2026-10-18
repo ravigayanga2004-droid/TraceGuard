@@ -27,7 +27,7 @@ def score_event(event: Event, mass_change: bool = False) -> Event:
         ),
         (
             any(p.suffix in {".exe", ".dll", ".so", ".dylib", ".com", ".msi"} for p in paths)
-            or bool(event.after and event.after.mode & 0o111),
+            or any(record and record.mode & 0o111 for record in (event.before, event.after)),
             25,
             "Executable",
         ),
