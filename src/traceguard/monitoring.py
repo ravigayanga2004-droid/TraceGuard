@@ -86,6 +86,8 @@ class Monitoring:
 
     def start(self) -> None:
         with self.lock:
+            if self.thread is not None and self.thread.is_alive():
+                return
             state = self.active_state()
             if state is None:
                 return
@@ -95,19 +97,22 @@ class Monitoring:
                 self.error = str(exc)
                 return
             self.stop = threading.Event()
+            stop = self.stop
             self.error = None
 
             def run() -> None:
                 try:
-                    service.run(self.stop)
+                    service.run(stop)
                 except Exception as exc:
                     self._error(str(exc))
+                finally:
+                    service.startup_complete.set()
 
             self.thread = threading.Thread(target=run, name="traceguard-monitor", daemon=True)
             self.thread.start()
             # Do not report successful startup before Watchdog has subscribed.
-            if not service.ready.wait(5):
-                self.stop.set()
+            if not service.startup_complete.wait(5) or not service.ready.is_set():
+                stop.set()
                 self.thread.join(timeout=10)
                 self.error = self.error or "The folder monitor could not start. Try again."
 
