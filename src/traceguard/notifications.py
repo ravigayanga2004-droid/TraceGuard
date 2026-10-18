@@ -34,15 +34,22 @@ class Notifier:
         for event in events:
             self.console.print(f"  {event.severity}: {event.kind} {event.path}", markup=False)
         # Counts and scores only; paths and hashes are never sent externally.
-        try:
-            if self.desktop:
+        if self.desktop:
+            try:
                 from plyer import notification
 
                 notification.notify(title="TraceGuard", message=message, timeout=10)
-            if self.email:
+            except Exception as exc:
+                self.console.print(
+                    f"Desktop notification failed ({type(exc).__name__})", markup=False
+                )
+        if self.email:
+            try:
                 self.send_email(message)
-        except Exception as exc:
-            self.console.print(f"Notification failed ({type(exc).__name__})", markup=False)
+            except Exception as exc:
+                self.console.print(
+                    f"Email notification failed ({type(exc).__name__})", markup=False
+                )
 
     @staticmethod
     def send_email(summary: str) -> None:
